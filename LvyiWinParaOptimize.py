@@ -42,7 +42,7 @@ if __name__ == '__main__':
     margin_rate = conf.getfloat('backtest', 'margin_rate')
     slip=conf.getfloat('backtest','slip')
 
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet_1.csv')
+    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
     parasetlen=parasetlist.shape[0]
     resultlist=pd.DataFrame(columns=['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate', 'initial_cash','commission_fee', 'end_cash','min_cash','max_cash'])
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
     l = []
 
-    for i in np.arange(0, parasetlen):
+    for i in np.arange(0, 10):
         #rawdata = DC.GET_DATA(DC.DATA_TYPE_RAW, symbol, K_MIN, backtest_startdate).reset_index(drop=True)
         setname=parasetlist.ix[i,'Setname']
         kdj_n=parasetlist.ix[i,'KDJ_N']

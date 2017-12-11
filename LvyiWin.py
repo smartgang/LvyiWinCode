@@ -18,7 +18,7 @@
     将dfxCross（）函数转移到MA模块中实现
 '''
 import pandas as pd
-import numpy
+import numpy as np
 import MA
 import DMI
 import BOLL
@@ -26,7 +26,26 @@ import KDJ
 import DATA_CONSTANTS as DC
 import ConfigParser
 
-def LvyiWin(rawdata,paraset):
+
+def removeContractSwap(resultlist,contractswaplist):
+    results=resultlist
+    resultnum=results.shape[0]
+    i=0
+    for utc in contractswaplist:
+        while i<resultnum:
+            result=results.loc[i]
+            if result.openutc< utc and result.closeutc>utc:
+                results.drop(i, inplace=True)
+                i+=1
+                break
+            if result.openutc> utc and result.closeutc>utc:
+                i+=1
+                break
+            i+=1
+    results = results.reset_index(drop=True)
+    return results
+
+def LvyiWin(rawdata,paraset,contractswaplist):
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
     KDJ_HLim=paraset['KDJ_HLim']
@@ -146,11 +165,11 @@ def LvyiWin(rawdata,paraset):
     shortopr=shortcrosslist.loc[openshortindex]
     shortopr['tradetype']=-1
     shortopr.rename(columns={'deathcrosstime':'opentime',
-                             'goldcrossutc': 'openutc',
+                             'deathcrossutc': 'openutc',
                             'deathcrossindex':'openindex',
                             'deathcrossprice':'openprice',
                             'goldcrosstime':'closetime',
-                             'deathcrossutc': 'closeutc',
+                             'goldcrossutc': 'closeutc',
                             'goldcrossindex':'closeindex',
                             'goldcrossprice':'closeprice'}, inplace = True)
 
@@ -161,9 +180,12 @@ def LvyiWin(rawdata,paraset):
     result=result.sort_index()
     result=result.reset_index(drop=True)
     result.drop(result.shape[0]-1,inplace=True)
+    #去掉跨合约的操作
+    result=removeContractSwap(result,contractswaplist)
 
     firsttradecash = initial_cash / margin_rate
-    result['ret']=(result['closeprice']-result['openprice'])*result['tradetype']
+    #2017-12-08:加入滑点
+    result['ret']=((result['closeprice']-result['openprice'])*result['tradetype'])-slip
     result['ret_r']=result['ret']/result['closeprice']
     result['commission_fee']=firsttradecash*commission_ratio*2
     result['funcuve']=firsttradecash
@@ -175,7 +197,7 @@ def LvyiWin(rawdata,paraset):
     result['trade money']=0
     result.ix[0,'trade money']=result.ix[0,'own cash']/margin_rate
     oprtimes=result.shape[0]
-    for i in numpy.arange(1,oprtimes):
+    for i in np.arange(1,oprtimes):
         result.ix[i, 'funcuve']=result.ix[i-1,'funcuve']*(1+result.ix[i,'ret_r'])-60
         result.ix[i, 'commission_fee'] = result.ix[i-1,'trade money'] * commission_ratio * 2
         result.ix[i, 'per earn'] =result.ix[i-1,'trade money']*result.ix[i, 'ret_r']
@@ -213,6 +235,7 @@ if __name__ == '__main__':
     initial_cash=conf.getint('backtest','initial_cash')
     commission_ratio=conf.getfloat('backtest','commission_ratio')
     margin_rate=conf.getfloat('backtest','margin_rate')
+    slip = conf.getfloat('backtest','slip')
 
     DMI_N=conf.getint('para','DMI_N')
     DMI_M=conf.getint('para','DMI_M')
@@ -230,7 +253,10 @@ if __name__ == '__main__':
     BOLL_P=conf.getint('para','BOLL_P')
     '''
     rawdata=DC.GET_DATA(DC.DATA_TYPE_RAW,symbol,K_MIN,backtest_startdate).reset_index(drop=True)
+    contractswaplist=DC.getContractSwaplist(symbol)
+    swaplist=np.array(contractswaplist.swaputc)
     paraset={
+        'symbol':symbol,
         'KDJ_N':KDJ_N,
         'KDJ_M':KDJ_M,
         'KDJ_HLim':KDJ_HLim,
@@ -241,9 +267,10 @@ if __name__ == '__main__':
         'MA_Long':MA_Long,
         'initial_cash':initial_cash,
         'commission_ratio':commission_ratio,
-        'margin_rate':margin_rate
+        'margin_rate':margin_rate,
+        'slip':slip
     }
-    result,df,closeopr,results=LvyiWin(rawdata,paraset)
+    result,df,closeopr,results=LvyiWin(rawdata,paraset,swaplist)
     print results
     result.to_csv(symbol+str(K_MIN)+'result.csv')
     df.to_csv(symbol+str(K_MIN)+'all.csv')
