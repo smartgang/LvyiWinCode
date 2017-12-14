@@ -19,7 +19,7 @@ margin_rate=conf.getfloat('backtest','margin_rate')
 parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet_1.csv')
 parasetlen=parasetlist.shape[0]
 rawdata = DC.GET_DATA(DC.DATA_TYPE_RAW, symbol, K_MIN, backtest_startdate).reset_index(drop=True)
-resultlist=pd.DataFrame(columns=['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate', 'initial_cash','commission_fee', 'end_cash','min_cash','max_cash'])
+resultlist=pd.DataFrame(columns=['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate', 'initial_cash','commission_fee', 'end_cash','min_cash','max_cash','max_single_loss_rate','max_retrace_rate'])
 for i in numpy.arange(0, parasetlen):
     setname=parasetlist.ix[i,'Setname']
     kdj_n=parasetlist.ix[i,'KDJ_N']
@@ -52,7 +52,9 @@ for i in numpy.arange(0, parasetlen):
         results['commission_fee'],
         results['end_cash'],
         results['min_cash'],
-        results['max_cash']
+        results['max_cash'],
+        results['max_single_loss_rate'],
+        results['max_retrace_rate']
     ]
     resultlist.loc[i]=r
     result.to_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\'+symbol + str(K_MIN) +' '+setname+ ' result.csv')
@@ -61,22 +63,3 @@ for i in numpy.arange(0, parasetlen):
     print setname+" finished"
 print resultlist
 resultlist.to_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\'+symbol+ str(K_MIN)+' finanlresults.csv')
-
-def getParallelResult(rawdata,setname,para):
-    result ,df ,closeopr,results = LvyiWin.LvyiWin(rawdata, para)
-    r = [
-        setname,
-        para['MA_Short'],
-        para['MA_Long'],
-        para['KDJ_N'],
-        para['DMI_N'],
-        results['opentimes'],
-        results['successrate'],
-        results['initial_cash'],
-        results['commission_fee'],
-        results['end_cash'],
-        results['min_cash'],
-        results['max_cash']
-    ]
-    result.to_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\' + symbol + str(K_MIN) + ' ' + setname + ' result.csv')
-    return r

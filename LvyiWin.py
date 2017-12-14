@@ -189,26 +189,38 @@ def LvyiWin(rawdata,paraset,contractswaplist):
     result['ret_r']=result['ret']/result['closeprice']
     result['commission_fee']=firsttradecash*commission_ratio*2
     result['funcuve']=firsttradecash
+    result['per earn'] = 0 #单笔盈亏
+    result['own cash'] = 0 #自有资金线
+    result['trade money'] = 0 #杠杆后的可交易资金线
+    result['retrace rate'] = 0  # 回撤率
+
     result.ix[0,'funcuve']=firsttradecash*(1+result.ix[0,'ret_r'])-60
-    result['per earn'] = 0
     result.ix[0,'per earn']=firsttradecash*result.ix[0,'ret_r']
-    result['own cash']=0
-    result.ix[0,'own cash']=initial_cash+result.ix[0,'per earn']-result.ix[0,'commission_fee']
-    result['trade money']=0
+    #加入maxcash用于计算最大回撤
+    maxcash=initial_cash+result.ix[0,'per earn']-result.ix[0,'commission_fee']
+    result.ix[0,'own cash']=maxcash
     result.ix[0,'trade money']=result.ix[0,'own cash']/margin_rate
     oprtimes=result.shape[0]
     for i in np.arange(1,oprtimes):
         result.ix[i, 'funcuve']=result.ix[i-1,'funcuve']*(1+result.ix[i,'ret_r'])-60
-        result.ix[i, 'commission_fee'] = result.ix[i-1,'trade money'] * commission_ratio * 2
-        result.ix[i, 'per earn'] =result.ix[i-1,'trade money']*result.ix[i, 'ret_r']
-        result.ix[i, 'own cash'] = result.ix[i-1,'own cash'] + result.ix[i, 'per earn'] - result.ix[i,'commission_fee']
-        result.ix[i, 'trade money']=result.ix[i,'own cash']/margin_rate
+        commission=result.ix[i-1,'trade money'] * commission_ratio * 2
+        perearn=result.ix[i-1,'trade money']*result.ix[i, 'ret_r']
+        owncash=result.ix[i-1,'own cash'] + perearn - commission
+        maxcash=max(maxcash,owncash)
+        retrace_rate=(maxcash-owncash)/maxcash
+        result.ix[i, 'own cash'] = owncash
+        result.ix[i, 'commission_fee'] = commission
+        result.ix[i, 'per earn'] = perearn
+        result.ix[i, 'trade money']=owncash/margin_rate
+        result.ix[i, 'retrace rate'] = retrace_rate
 
     endcash=result.ix[oprtimes-1,'own cash']
     mincash=result['own cash'].min()
     maxcash=result['own cash'].max()
     successrate=(result.loc[result['ret']>0]).shape[0]/float(oprtimes)
     commission_fee=result['commission_fee'].sum()
+    max_single_loss_rate=abs(result['ret_r'].min())
+    max_retrace_rate=result['retrace rate'].max()
 
     results={
         'opentimes': oprtimes,
@@ -217,7 +229,9 @@ def LvyiWin(rawdata,paraset,contractswaplist):
         'commission_fee':commission_fee,
         'end_cash': endcash,
         'min_cash':mincash,
-        'max_cash':maxcash
+        'max_cash':maxcash,
+        'max_single_loss_rate':max_single_loss_rate,
+        'max_retrace_rate':max_retrace_rate
     }
 
     closeopr=result.loc[:,'closetime':'tradetype']

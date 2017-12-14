@@ -22,7 +22,9 @@ def getParallelResult(symbol,K_MIN,backtest_startdate,setname,para,contractswapl
         results['commission_fee'],
         results['end_cash'],
         results['min_cash'],
-        results['max_cash']
+        results['max_cash'],
+        results['max_single_loss_rate'],
+        results['max_retrace_rate']
     ]
     print setname + " finished"
     result.to_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\' + symbol + str(K_MIN) + ' ' + setname + ' result.csv')
@@ -44,7 +46,9 @@ if __name__ == '__main__':
 
     parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
     parasetlen=parasetlist.shape[0]
-    resultlist=pd.DataFrame(columns=['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate', 'initial_cash','commission_fee', 'end_cash','min_cash','max_cash'])
+    resultlist=pd.DataFrame(columns=
+                            ['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate',
+                             'initial_cash','commission_fee', 'end_cash','min_cash','max_cash','max_single_loss_rate','max_retrace_rate'])
 
     contractswaplist = DC.getContractSwaplist(symbol)
     swaplist = np.array(contractswaplist.swaputc)
