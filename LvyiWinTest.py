@@ -79,6 +79,40 @@ for i in range(15):
     if 'Set' in filnamelist[i]:
         print filnamelist[i]
 '''
-#回测结果中去掉跨合约的操作
-#1.将合约切换点转换为index：将日期转换为时间，在原文件中找到该时间对应的index
-#2.遍历操作列表，去掉包含切换index的操作
+#统计连续为正最大的数量
+#统计连续为负最大的数量
+df=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I600 slip\\DCE.I600 Set8564 MS5 ML12 KN22 DN26 result.csv')
+ret=df.ret.tolist()
+positiveDict=[0]*20
+negativeDict=[0]*20
+r0=ret[0]
+positivenum=int(0)
+negativenum=int(0)
+for r in ret:
+    if r>0:
+        #当前为正，判断之前的数
+        if r0>0:
+            #如果当前为正，之前也为正，则正数+1
+            positivenum+=1
+        elif r0<=0:
+            #如果当正，之前为负，正数+1，负数保存并清0
+            positivenum+=1
+            if negativenum>0:
+                negativeDict[negativenum]+=1
+            negativenum=0
+    elif r<=0:
+        if r0>0:
+            #如果当前为负，之前为正，则正数清并保存，负数+1
+            negativenum+=1
+            if positivenum>0:
+                positiveDict[positivenum] += 1
+            positivenum=0
+        elif r0<=0:
+            negativenum+=1
+    r0=r
+
+positivedf=pd.DataFrame(positiveDict,columns=['successionnum'])
+negativedf=pd.DataFrame(negativeDict,columns=['successionnum'])
+positivedf.to_csv('positivedf.csv')
+negativedf.to_csv('negativedf.csv')
+pass

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+'''
+多层推进分析第1步：
+计算每个组合每个月的独立收益
+'''
 import pandas as pd
 import numpy as np
 
@@ -22,4 +26,4 @@ for i in np.arange(0, parasetlen):
     prodlist.append(ret_r_prod)
 
 proddf=pd.DataFrame(prodlist)
-proddf.to_csv('prodresult.csv')
+proddf.to_csv('prodresult '+symbol+'.csv')
