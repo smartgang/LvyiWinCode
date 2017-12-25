@@ -11,7 +11,7 @@ i=0
 for ms in range(3,8,1):
     for ml in range(8,31,1):
         for kn in range(6,32,2):
-            for dn in range(30,42,2):
+            for dn in range(6,32,2):
                 setname='Set'+str(i)+' MS'+str(ms)+' ML'+str(ml)+' KN'+str(kn)+' DN'+str(dn)
                 l=[setname,ms,ml, kn ,dn]
                 setlist.append(l)

@@ -79,6 +79,7 @@ for i in range(15):
     if 'Set' in filnamelist[i]:
         print filnamelist[i]
 '''
+'''
 #统计连续为正最大的数量
 #统计连续为负最大的数量
 df=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I600 slip\\DCE.I600 Set8564 MS5 ML12 KN22 DN26 result.csv')
@@ -116,3 +117,15 @@ negativedf=pd.DataFrame(negativeDict,columns=['successionnum'])
 positivedf.to_csv('positivedf.csv')
 negativedf.to_csv('negativedf.csv')
 pass
+'''
+#根据月份生成utc值
+import time
+monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
+            'Jan-17','Feb-17','Mar-17','Apr-17','May-17','Jun-17','Jul-17','Aug-17','Sep-17','Oct-17','Nov-17','Dec-17']
+for month in monthlist:
+    timestr=month+'-01 00:00:00'
+    t=time.strptime(timestr,"%b-%y-%d %H:%M:%S")
+    print t
+    utc=int(time.mktime(t))
+    print utc
+

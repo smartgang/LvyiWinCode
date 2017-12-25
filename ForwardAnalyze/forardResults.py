@@ -6,8 +6,8 @@
 
 import pandas as pd
 stepList=[1,2,3,4,5,6]
-#windowsSet=[1,2,3,4,5,6,9,12,15]
-windowsSet=[1,2,4,5]
+windowsSet=[1,2,3,4,5,6,9,12,15]
+#windowsSet=[1,2,4,5]
 #whiteWindows = 12
 startFrom=0#从第0个月开始往前推
 symbol='DCE.I'
@@ -28,10 +28,12 @@ for whiteWindows in windowsSet:
     #df=df.set_index('Setname')
     for step in stepList:
         df[str(step)]=1
-        for i in range(0,len(monthlist),step):
-            startmonth = monthlist[i + startFrom]
-            endindex=i+startFrom + step - 1
-            if endindex>=len(monthlist):endindex=len(monthlist)-1
+        for i in range(startFrom,len(monthlist),step):
+            startindex=i
+            endindex=i +step - 1
+            if startindex>=len(monthlist):startindex = len(monthlist)-1
+            if endindex>=len(monthlist):endindex = len(monthlist)-1
+            startmonth = monthlist[startindex]
             endmonth = monthlist[endindex]
             grayValuelist=monthlyRetR.ix[setlist[i],startmonth:endmonth]
             grayValue=grayValuelist.prod()
