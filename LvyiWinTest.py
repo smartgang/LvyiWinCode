@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-import numpy
 import sys
 
 '''
@@ -118,6 +117,7 @@ positivedf.to_csv('positivedf.csv')
 negativedf.to_csv('negativedf.csv')
 pass
 '''
+'''
 #根据月份生成utc值
 import time
 monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
@@ -128,4 +128,9 @@ for month in monthlist:
     print t
     utc=int(time.mktime(t))
     print utc
+'''
+#生成排序序列
+import numpy
+indexarray=range(100,0,-1)
+print indexarray
 
