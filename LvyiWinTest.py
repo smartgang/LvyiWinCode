@@ -78,7 +78,7 @@ for i in range(15):
     if 'Set' in filnamelist[i]:
         print filnamelist[i]
 '''
-'''
+
 #统计连续为正最大的数量
 #统计连续为负最大的数量
 df=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I600 slip\\DCE.I600 Set8564 MS5 ML12 KN22 DN26 result.csv')
@@ -116,7 +116,7 @@ negativedf=pd.DataFrame(negativeDict,columns=['successionnum'])
 positivedf.to_csv('positivedf.csv')
 negativedf.to_csv('negativedf.csv')
 pass
-'''
+
 '''
 #根据月份生成utc值
 import time
@@ -129,8 +129,32 @@ for month in monthlist:
     utc=int(time.mktime(t))
     print utc
 '''
+'''
 #生成排序序列
 import numpy
-indexarray=range(100,0,-1)
-print indexarray
+#indexarray=range(5,30,1)
+#print indexarray
+b = numpy.arange(-0.01,-0.062,-0.002)
+print b
+'''
+'''
+#生成月份列表
+#Jan-16
+from datetime import datetime
 
+date_l=[datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2013-10-01', end='2018-01-01',freq='M'))]
+print date_l
+'''
+'''
+#月收益top200均值画图
+import matplotlib.pyplot as plt
+df = pd.read_csv("D:\\002 MakeLive\myquant\LvyiWin\Results\SHFE RB 600 ricequant\\SHFE.RB_600_monthy_retr.csv",index_col='Setname')  # 排名文件
+cols = df.columns.tolist()
+averagelist=[]
+for c in cols:
+    df = df.sort_values(by=c, ascending=False)
+    averagelist.append(df.head(1000)[c].mean())
+print averagelist
+plt.plot(averagelist)
+plt.show()
+'''

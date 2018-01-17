@@ -58,7 +58,7 @@ if __name__ == '__main__':
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
     l = []
 
-    for i in np.arange(0, 10):
+    for i in np.arange(0, parasetlen):
         #rawdata = DC.GET_DATA(DC.DATA_TYPE_RAW, symbol, K_MIN, backtest_startdate).reset_index(drop=True)
         setname=parasetlist.ix[i,'Setname']
         kdj_n=parasetlist.ix[i,'KDJ_N']
