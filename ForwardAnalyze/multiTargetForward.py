@@ -45,12 +45,18 @@ def calWhiteResult(whiteWindows,symbol,K_MIN,parasetlist,monthlist,datapath,resu
             startutc=float(time.mktime(time.strptime(whiteWindowsStart,"%b-%y-%d %H:%M:%S")))
             endutc=float(time.mktime(time.strptime(whiteWindowsEnd,"%b-%y-%d %H:%M:%S")))
             resultdata=resultdf.loc[(resultdf['openutc']>=startutc) & (resultdf['openutc']<endutc)]
-            resultdata=resultdata.reset_index(drop=True)
-            annual_list.append(RS.annual_return(resultdata))
-            sharpe_list.append(RS.sharpe_ratio(resultdata))
-            success_rate_list.append(RS.success_rate(resultdata))
-            drawback,a,b=RS.max_drawback(resultdata)
-            drawback_list.append(drawback)
+            if resultdata.shape[0]>0:
+                resultdata=resultdata.reset_index(drop=True)
+                annual_list.append(RS.annual_return(resultdata))
+                sharpe_list.append(RS.sharpe_ratio(resultdata))
+                success_rate_list.append(RS.success_rate(resultdata))
+                drawback,a,b=RS.max_drawback(resultdata)
+                drawback_list.append(drawback)
+            else:
+                annual_list.append(0)
+                sharpe_list.append(0)
+                success_rate_list.append(0)
+                drawback_list.append(-1)
             #print('annual:%f.2,sharpe:%f.2,success_rate:%f.2,drawback:%f.2'%(annual,sharpe,success_rate,drawback))
         annual_total_list.append(annual_list)
         sharpe_total_list.append(sharpe_list)
@@ -96,6 +102,8 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
     rank3df = pd.DataFrame({'Setname': annualdf.Setname})
     rank4df = pd.DataFrame({'Setname': annualdf.Setname})
     rank5df = pd.DataFrame({'Setname': annualdf.Setname})
+    rank6df = pd.DataFrame({'Setname': annualdf.Setname})
+    rank7df = pd.DataFrame({'Setname': annualdf.Setname})
     annualrankdf = annualrankdf.sort_values(by='Setname', ascending=True)
     sharperankdf = sharperankdf.sort_values(by='Setname', ascending=True)
     successrankdf = successrankdf.sort_values(by='Setname', ascending=True)
@@ -105,6 +113,8 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
     rank3df = rank3df.sort_values(by='Setname', ascending=True)
     rank4df = rank4df.sort_values(by='Setname', ascending=True)
     rank5df = rank5df.sort_values(by='Setname', ascending=True)
+    rank6df = rank6df.sort_values(by='Setname', ascending=True)
+    rank7df = rank7df.sort_values(by='Setname', ascending=True)
     for month in col:
         df = pd.DataFrame({'Setname': annualdf.Setname, 'annual': annualdf[month], 'sharpe': sharpedf[month],'success_rate':successdf[month],'drawback':drawbackdf[month]})
         df['AnnualRank'] = 0
@@ -116,6 +126,8 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
         df['Rank3']=0
         df['Rank4']=0
         df['Rank5']=0
+        df['Rank6']=0
+        df['Rank7']=0
 
         rangarray = range(df.shape[0], 0, -1)
         df = df.sort_values(by='annual', ascending=False)
@@ -132,6 +144,9 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
         df['Rank3']=df['AnnualRank']*0.6+df['DrawbackRank']*0.4#目标集3：年化收益*0.6+最大回撤*0.4
         df['Rank4']=df['SharpeRank']*0.6+df['DrawbackRank']*0.4#目标集4：夏普*0.6+最大回撤*0.4
         df['Rank5']=df['AnnualRank']*0.4+df['SharpeRank']*0.3+df['SuccessRank']*0.1+df['DrawbackRank']*0.2#目标集5：4目标综合
+        df['Rank6']=df['SuccessRank']
+        df['Rank7']=df['SuccessRank']*0.5+df['AnnualRank']*0.5
+
         annualrankdf[month]=df['AnnualRank']
         sharperankdf[month]=df['SharpeRank']
         successrankdf[month]=df['SuccessRank']
@@ -141,6 +156,8 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
         rank3df[month] = df['Rank3']
         rank4df[month] = df['Rank4']
         rank5df[month] = df['Rank5']
+        rank6df[month] = df['Rank6']
+        rank7df[month] = df['Rank7']
         del df
     resultnamehead = ("%s_%s_%d_win%d_" % (resultpath, symbol, K_MIN, whiteWindows))
     annualrankdf.to_csv(resultnamehead+'AnnualRank.csv')
@@ -152,6 +169,8 @@ def rankByWhiteResult(symbol,K_MIN,whiteWindows,datapath,resultpath):
     rank3df.to_csv(resultnamehead+'Rank3.csv')
     rank4df.to_csv(resultnamehead+'Rank4.csv')
     rank5df.to_csv(resultnamehead+'Rank5.csv')
+    rank6df.to_csv(resultnamehead + 'Rank6.csv')
+    rank7df.to_csv(resultnamehead + 'Rank7.csv')
     print ('WhiteWindows:%d calculating rank result Finished!'% whiteWindows)
     print datetime.now()
 
@@ -162,7 +181,7 @@ def calGrayResult(symbol,K_MIN,windowsSet,rankpath,rawdatapath):
     '''
     tf = "%s%s_%d_monthly_retr.csv" % (rawdatapath, symbol, K_MIN)
     retdf=pd.read_csv(tf,index_col='Setname')
-    targetSet=['Rank1','Rank2','Rank3','Rank4','Rank5']
+    targetSet=['Rank1','Rank2','Rank3','Rank4','Rank5','Rank6','Rank7']
     resultlist=[]
     setresultlist=[]
     groupcounter=0
@@ -362,25 +381,25 @@ if __name__ == '__main__':
     #白区窗口值
     #每次只需要修改这个值
     #windowsSet=[1,2,3,4,5,6,9,12,15]
-    windowsSet=range(1,13)
+    windowsSet=range(3,4)
     #print windowsSet
     #whiteWindows = 12
     #monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
     #            'Jan-17','Feb-17','Mar-17','Apr-17','May-17','Jun-17','Jul-17','Aug-17','Sep-17','Oct-17','Nov-17','Dec-17']
-    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2016-01-01', end='2018-01-01',freq='M'))]
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
-    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
-    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardResults\\'
-    rankpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardRank\\'
+    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2013-10-01', end='2018-01-01',freq='M'))]
+    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
+    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\'
+    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\ForwardResults\\'
+    rankpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\ForwardRank\\'
     symbol='DCE.I'
-    K_MIN=600
+    K_MIN=3600
     starttime=datetime.now()
     print starttime
-    '''
+
     for whiteWindows in windowsSet:
-        calWhiteResult(whiteWindows=whiteWindows,symbol=symbol,K_MIN=K_MIN,parasetlist=parasetlist,monthlist=monthlist,datapath=rawdatapath,resultpath=resultpath)
+        #calWhiteResult(whiteWindows=whiteWindows,symbol=symbol,K_MIN=K_MIN,parasetlist=parasetlist,monthlist=monthlist,datapath=rawdatapath,resultpath=resultpath)
         rankByWhiteResult(symbol=symbol,K_MIN=K_MIN,whiteWindows=whiteWindows,datapath=resultpath,resultpath=rankpath)
-    '''
+    
     # 多进程优化，启动一个对应CPU核心数量的进程池
     '''
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
@@ -392,7 +411,6 @@ if __name__ == '__main__':
     '''
     #calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
     #calOprResult(rawdatapath,symbol,K_MIN)
-    getMonthParameter('2017-07','2018-01','Rank1',6,symbol,K_MIN,parasetlist,rawdatapath,rawdatapath)
     endtime = datetime.now()
     print starttime
     print endtime
