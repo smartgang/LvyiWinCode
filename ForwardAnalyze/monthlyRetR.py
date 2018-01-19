@@ -28,8 +28,8 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
     return tf
 
 if __name__ == '__main__':
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
-    datapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
+    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
+    datapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\'
     symbol='DCE.I'
-    K_MIN=600
+    K_MIN=3600
     monthyRetR(parasetlist,datapath,symbol,K_MIN)

@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-import sys
-
 '''
 #日期去重
 raw = pd.read_csv('df_all_600.csv')
@@ -78,7 +75,7 @@ for i in range(15):
     if 'Set' in filnamelist[i]:
         print filnamelist[i]
 '''
-
+'''
 #统计连续为正最大的数量
 #统计连续为负最大的数量
 df=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I600 slip\\DCE.I600 Set8564 MS5 ML12 KN22 DN26 result.csv')
@@ -116,7 +113,7 @@ negativedf=pd.DataFrame(negativeDict,columns=['successionnum'])
 positivedf.to_csv('positivedf.csv')
 negativedf.to_csv('negativedf.csv')
 pass
-
+'''
 '''
 #根据月份生成utc值
 import time
@@ -158,3 +155,31 @@ print averagelist
 plt.plot(averagelist)
 plt.show()
 '''
+''''
+#获取当前目录
+import os
+path=os.getcwd()
+print path
+print os.path.abspath(os.curdir)
+print os.path.abspath('..')#上一级目录
+print os.path.abspath('.')#当前目录
+import DATA_CONSTANTS as DC
+p=DC.getUpperPath()
+print p
+'''
+
+# -*- coding: utf-8 -*-
+'''
+计算1mk的ATR
+从N-1开始遍历10mk，取0~N-2的ATR:trlist
+根据N的strtime定位到1mk，取rng,1mkdata
+for i in range(rng):
+    trlist.append(1mkdata.iloc[i]['TR']
+    df1m['ATR']=trlist.mean()
+    del trlist[-1]
+'''
+import pandas as pd
+N=20
+df10m=pd.read_csv("SHFE.RB 600_TR.csv")
+atlist=df10m.loc[:N-1]['TR'].tolist()
+print atlist

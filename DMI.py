@@ -120,7 +120,7 @@ def DMI(df,N=14,M=6):
     df1['A']=df1.max(axis=1)
     df1.drop('c',axis=1,inplace=True)
     df1.drop('d',axis=1,inplace=True)
-    df1['B']=np.abs(low-close)
+    df1['B']=np.abs(low-closeshift1)
     df1['C']=df1.max(axis=1)
 
     #df1.drop('A',axis=1,inplace=True)
