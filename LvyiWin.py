@@ -245,7 +245,7 @@ if __name__ == '__main__':
     symbol=conf.get('backtest', 'symbols')
     K_MIN=conf.getint('backtest','bar_type')
     backtest_startdate=conf.get('backtest','start_time')
-    backtest_enddate=conf.get('backtest','start_time')
+    backtest_enddate=conf.get('backtest','end_time')
     initial_cash=conf.getint('backtest','initial_cash')
     commission_ratio=conf.getfloat('backtest','commission_ratio')
     margin_rate=conf.getfloat('backtest','margin_rate')
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     BOLL_M=conf.getint('para','BOLL_M')
     BOLL_P=conf.getint('para','BOLL_P')
     '''
-    rawdata=DC.GET_DATA(DC.DATA_TYPE_RAW,symbol,K_MIN,backtest_startdate).reset_index(drop=True)
+    rawdata=DC.getBarData(symbol,K_MIN,backtest_startdate,backtest_enddate).reset_index(drop=True)
     contractswaplist=DC.getContractSwaplist(symbol)
     swaplist=np.array(contractswaplist.swaputc)
     paraset={

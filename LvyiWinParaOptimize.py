@@ -7,8 +7,8 @@ import DATA_CONSTANTS as DC
 import multiprocessing
 
 
-def getParallelResult(symbol,K_MIN,backtest_startdate,setname,para,contractswaplist):
-    rawdata = DC.GET_DATA(DC.DATA_TYPE_RAW, symbol, K_MIN, backtest_startdate).reset_index(drop=True)
+def getParallelResult(symbol,K_MIN,backtest_startdate,backtest_enddate,setname,para,contractswaplist):
+    rawdata = DC.getBarData(symbol, K_MIN, backtest_startdate,backtest_enddate,).reset_index(drop=True)
     result ,df ,closeopr,results = LvyiWin.LvyiWin(rawdata, para,contractswaplist)
     r = [
         setname,
@@ -38,13 +38,13 @@ if __name__ == '__main__':
     symbol = conf.get('backtest', 'symbols')
     K_MIN = conf.getint('backtest', 'bar_type')
     backtest_startdate = conf.get('backtest', 'start_time')
-    backtest_enddate = conf.get('backtest', 'start_time')
+    backtest_enddate = conf.get('backtest', 'end_time')
     initial_cash = conf.getint('backtest', 'initial_cash')
     commission_ratio = conf.getfloat('backtest', 'commission_ratio')
     margin_rate = conf.getfloat('backtest', 'margin_rate')
     slip=conf.getfloat('backtest','slip')
 
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
+    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
     parasetlen=parasetlist.shape[0]
     resultlist=pd.DataFrame(columns=
                             ['Setname','MA_Short','MA_Long','KDJ_N','DMI_N','opentimes','successrate',
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             'margin_rate':margin_rate,
             'slip':slip
         }
-        l.append(pool.apply_async(getParallelResult, (symbol,K_MIN,backtest_startdate,setname,paraset,swaplist)))
+        l.append(pool.apply_async(getParallelResult, (symbol,K_MIN,backtest_startdate,backtest_enddate,setname,paraset,swaplist)))
     pool.close()
     pool.join()
 
