@@ -290,22 +290,23 @@ def calOprResult(rawpath,symbol,K_MIN):
         sharpe = RS.sharpe_ratio(oprdf)
         average_change = RS.average_change(oprdf)
         successrate = RS.success_rate(oprdf)
+        max_drawback,b,c = RS.max_drawback(oprdf)
         max_successive_up,max_successive_down=RS.max_successive_up(oprdf)
         max_return,min_return = RS.max_period_return(oprdf)
         endcash = oprdf.ix[oprtimes - 1, 'own cash']
         mincash = oprdf['own cash'].min()
         maxcash = oprdf['own cash'].max()
 
-        groupResult.append([gray.name,gray.Target,gray.Windows,annual,sharpe,average_change,successrate,max_successive_up,max_successive_down,max_return,min_return,endcash,mincash,maxcash])
+        groupResult.append([gray.name,gray.Target,gray.Windows,annual,sharpe,average_change,successrate,max_drawback,max_successive_up,max_successive_down,max_return,min_return,endcash,mincash,maxcash])
 
-    groupResultDf=pd.DataFrame(groupResult,columns=['Group','Target','Windows','annual','sharpe','average_change','success_rate',
+    groupResultDf=pd.DataFrame(groupResult,columns=['Group','Target','Windows','annual','sharpe','average_change','success_rate','drawback',
                                                     'max_successive_up','max_successive_down','max_return','min_return','endcash','mincash','maxcash'])
     groupResultDf.to_csv(rawpath+'ForwardOprAnalyze\\'+symbol+'_'+str(K_MIN)+'_groupOprResult.csv')
     pass
 
 def runPara(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,resultpath,rankpath):
-    calWhiteResult(whiteWindows=whiteWindows, symbol=symbol, K_MIN=K_MIN, parasetlist=parasetlist,
-                       monthlist=monthlist, datapath=rawdatapath, resultpath=resultpath)
+    #calWhiteResult(whiteWindows=whiteWindows, symbol=symbol, K_MIN=K_MIN, parasetlist=parasetlist,
+    #                   monthlist=monthlist, datapath=rawdatapath, resultpath=resultpath)
     rankByWhiteResult(symbol=symbol, K_MIN=K_MIN, whiteWindows=whiteWindows, datapath=resultpath, resultpath=rankpath)
 
 def  getMonthParameter(startmonth,endmonth,ranktarget,windowns,symbol,K_MIN,parasetlist,oprresultpath,targetpath):
@@ -381,7 +382,7 @@ if __name__ == '__main__':
     #白区窗口值
     #每次只需要修改这个值
     #windowsSet=[1,2,3,4,5,6,9,12,15]
-    windowsSet=range(3,4)
+    windowsSet=range(1,13)
     #print windowsSet
     #whiteWindows = 12
     #monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
@@ -395,11 +396,11 @@ if __name__ == '__main__':
     K_MIN=3600
     starttime=datetime.now()
     print starttime
-
+    '''
     for whiteWindows in windowsSet:
         #calWhiteResult(whiteWindows=whiteWindows,symbol=symbol,K_MIN=K_MIN,parasetlist=parasetlist,monthlist=monthlist,datapath=rawdatapath,resultpath=resultpath)
         rankByWhiteResult(symbol=symbol,K_MIN=K_MIN,whiteWindows=whiteWindows,datapath=resultpath,resultpath=rankpath)
-    
+    '''
     # 多进程优化，启动一个对应CPU核心数量的进程池
     '''
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
@@ -410,7 +411,7 @@ if __name__ == '__main__':
     pool.join()
     '''
     #calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
-    #calOprResult(rawdatapath,symbol,K_MIN)
+    calOprResult(rawdatapath,symbol,K_MIN)
     endtime = datetime.now()
     print starttime
     print endtime

@@ -9,7 +9,7 @@ import os
 import time
 import multiprocessing
 
-def getOprlistByPeriod(oprResultPath,symbol,K_MIN,setname,startdate,enddate):
+def getOprlistByPeriod(oprResultPath,setname,startdate,enddate):
     '''
     根据setname和month，从result结果中取当月的操作集，并返回df
     :param setname:
@@ -22,7 +22,6 @@ def getOprlistByPeriod(oprResultPath,symbol,K_MIN,setname,startdate,enddate):
     startutc = float(time.mktime(time.strptime(starttime, "%Y-%m-%d %H:%M:%S")))
     endutc = float(time.mktime(time.strptime(endtime, "%Y-%m-%d %H:%M:%S")))
     filename=("%s.csv"%(setname))
-    #f=filename
     oprdf=pd.read_csv(filename)
     oprdf=oprdf.loc[(oprdf['openutc'] >= startutc) & (oprdf['openutc'] < endutc)]
     oprdf = oprdf.reset_index(drop=True)
@@ -78,7 +77,7 @@ def calResult(resultpath,oprdf,symbol,K_MIN,setname,enddate,savedata=False):
 
 def runPara(symbol,K_MIN,oprResultPath,setname,startdate,enddate,savedata=False):
     print setname
-    oprdf = getOprlistByPeriod(oprResultPath, symbol, K_MIN, setname, startdate, enddate)
+    oprdf = getOprlistByPeriod(oprResultPath, setname, startdate, enddate)
     return calResult(oprResultPath, oprdf, symbol,K_MIN,setname, enddate, savedata)
 
 def calBacktestResult(symbol,K_MIN,oprResultPath,parasetList,datelist,savedata=False):
@@ -91,7 +90,8 @@ def calBacktestResult(symbol,K_MIN,oprResultPath,parasetList,datelist,savedata=F
         resultlist = []
         pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
         l = []
-        for setname in parasetList:
+        for set in parasetList:
+            setname=symbol+str(K_MIN)+set
             l.append(pool.apply_async(runPara,(symbol, K_MIN, oprResultPath, setname, startdate,enddate,savedata)))
         pool.close()
         pool.join()
@@ -105,9 +105,9 @@ def calBacktestResult(symbol,K_MIN,oprResultPath,parasetList,datelist,savedata=F
         groupResultDf.to_csv(tofilename)
 
 if __name__ == '__main__':
-    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600 ricequant'
+    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\ForwardOprAnalyze\\'
     symbol='DCE.I'
-    K_MIN=600
+    K_MIN=3600
     parasetlist = pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\RankWinSet.csv').Setname
-    datelist=[['2016-01-01','2017-12-01']]
+    datelist=[['2017-01-01','2018-01-01']]
     calBacktestResult(symbol,K_MIN,resultpath,parasetlist,datelist,True)

@@ -21,17 +21,17 @@ def parasetGenerator():
     setpd=pd.DataFrame(setlist,columns=['Setname','MA_Short','MA_Long','KDJ_N','DMI_N'])
     setpd.to_csv('ParameterOptSet_1.csv')
 
-def rankwinSetGenerator(symbol,K_MIN):
+def rankwinSetGenerator():
     setlist=[]
     rankset=range(1,8,1)
     winset=range(1,13,1)
     for r in rankset:
         for w in winset:
-            setname=("%s%d_Rank%d_win%d_oprResult"%(symbol,K_MIN,r,w))
+            setname=("_Rank%d_win%d_oprResult"%(r,w))
             setlist.append(setname)
     setpd=pd.DataFrame(setlist,columns=['Setname'])
     setpd.to_csv('RankWinSet.csv')
 
 if __name__ == '__main__':
     #parasetGenerator()
-    rankwinSetGenerator('SHFE.RB',3600)
+    rankwinSetGenerator()
