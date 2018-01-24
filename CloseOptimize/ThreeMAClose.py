@@ -22,26 +22,14 @@ final result要保存之前的end cash和新的end cash做对比
 import pandas as pd
 import DATA_CONSTANTS as DC
 import MA
-if __name__ == '__main__':
-    #参数配置
-    exchange_id = 'DCE'
-    sec_id='I'
+import multiprocessing
+
+def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,oprresultpath):
+    print sn
     symbol = '.'.join([exchange_id, sec_id])
-    K_MIN = 600
-    topN=2000
-    slip=0.5
-
-    #文件路径
-    upperpath=DC.getUpperPath(uppernume=2)
-    resultpath=upperpath+"\\Results\\"
-    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
-
-    #读取finalresult文件并排序，取前testnum个
-    finalresult=pd.read_csv(resultpath+foldername+"\\"+symbol+str(K_MIN)+" finanlresults.csv")
-    finalresult=finalresult.sort_values(by='end_cash',ascending=False)
-    finalresult=finalresult.iloc[0:topN]
-    oprset = finalresult.iloc[0]
-
+    initial_cash=20000
+    margin_rate=0.2
+    commission_ratio=0.00012
 
     #计算mamid，并计算ma和cross
     mashort=oprset['MA_Short']
@@ -54,10 +42,16 @@ if __name__ == '__main__':
 
     #读取opr
     oprfilename=symbol+str(K_MIN)+' '+oprset['Setname']+' result.csv'
-    oprresult=pd.read_csv(resultpath+foldername+"\\"+oprfilename)
-    print oprresult.head(10)
+    oprresult=pd.read_csv(oprresultpath+"\\"+oprfilename)
+    oprresult['new_ret']=oprresult['ret']
+    oprresult['new_ret_r']=oprresult['ret_r']
+    oprresult['new_closetime']=oprresult['closetime']
+    oprresult['new_closeindex'] = oprresult['closeindex']
+    oprresult['new_closeutc'] = oprresult['closeutc']
+    oprresult['new_closeprice'] = oprresult['closeprice']
     oprnum=oprresult.shape[0]
     for i in range(oprnum):
+        #print i
         opr=oprresult.iloc[i]
         oprtype=opr['tradetype']
         openutc=opr['openutc']
@@ -76,5 +70,90 @@ if __name__ == '__main__':
             newcloseutc=c['utc_time']
             newcloseindex=c['Unnamed: 0']
             newret=((newcloseprice - openprice) * oprtype) - slip
-            oprresult.iloc[i]['newret'] = newret
-            oprresult.iloc[i]['newret_r']=result['ret_r']=result['ret']/result['closeprice']
+            oprresult.ix[i,'new_ret'] = newret
+            oprresult.ix[i,'new_ret_r']=newret/openprice
+            oprresult.ix[i,'new_closetime'] = newclosetime
+            oprresult.ix[i,'new_closeindex'] = newcloseindex
+            oprresult.ix[i,'new_closeutc'] = newcloseutc
+            oprresult.ix[i,'new_closeprice'] = newcloseprice
+
+    firsttradecash = initial_cash / margin_rate
+    # 2017-12-08:加入滑点
+    oprresult['new_commission_fee'] = firsttradecash * commission_ratio * 2
+    oprresult['new_per earn'] = 0  # 单笔盈亏
+    oprresult['new_own cash'] = 0  # 自有资金线
+    oprresult['new_trade money'] = 0  # 杠杆后的可交易资金线
+    oprresult['new_retrace rate'] = 0  # 回撤率
+
+    oprresult.ix[0,'new_per earn'] = firsttradecash * oprresult.ix[0,'new_ret_r']
+    # 加入maxcash用于计算最大回撤
+    maxcash = initial_cash + oprresult.ix[0,'new_per earn'] - oprresult.ix[0,'new_commission_fee']
+    oprresult.ix[0,'new_own cash'] = maxcash
+    oprresult.ix[0,'new_trade money'] = oprresult.ix[0,'new_own cash'] / margin_rate
+
+    for i in range(1, oprnum):
+        commission = oprresult.ix[i - 1,'new_trade money'] * commission_ratio * 2
+        perearn = oprresult.ix[i - 1,'new_trade money'] * oprresult.iloc[i]['new_ret_r']
+        owncash = oprresult.ix[i - 1,'new_own cash'] + perearn - commission
+        maxcash = max(maxcash, owncash)
+        retrace_rate = (maxcash - owncash) / maxcash
+        oprresult.ix[i,'new_own cash'] = owncash
+        oprresult.ix[i,'new_commission_fee'] = commission
+        oprresult.ix[i,'new_per earn'] = perearn
+        oprresult.ix[i,'new_trade money'] = owncash / margin_rate
+        oprresult.ix[i,'new_retrace rate'] = retrace_rate
+
+    endcash = oprresult.ix[oprnum - 1, 'own cash']
+    newendcash = oprresult.ix[oprnum - 1, 'new_own cash']
+    successrate = (oprresult.loc[oprresult['ret'] > 0]).shape[0] / float(oprnum)
+    max_single_loss_rate = abs(oprresult['ret_r'].min())
+    max_retrace_rate = oprresult['retrace rate'].max()
+
+    oprresult.to_csv(oprresultpath+'\\ThreeMAClose\\'+symbol+str(K_MIN)+' '+oprset['Setname']+' 3MAresult.csv')
+
+    return [oprset['Setname'],endcash,newendcash,successrate,max_single_loss_rate,max_retrace_rate]
+
+if __name__ == '__main__':
+    #参数配置
+    exchange_id = 'SHFE'
+    sec_id='RB'
+    symbol = '.'.join([exchange_id, sec_id])
+    K_MIN = 600
+    topN=2000
+    slip=1
+
+    newresultlist=[]
+    #文件路径
+    upperpath=DC.getUpperPath(uppernume=2)
+    resultpath=upperpath+"\\Results\\"
+    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    oprresultpath=resultpath+foldername
+    #print foldername
+    #读取finalresult文件并排序，取前testnum个
+    finalresult=pd.read_csv(oprresultpath+"\\"+symbol+str(K_MIN)+" finanlresults.csv")
+    finalresult=finalresult.sort_values(by='end_cash',ascending=False)
+    #finalresult=finalresult.iloc[0:topN]
+
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    l = []
+
+    for sn in range(topN):
+        opr = finalresult.iloc[sn]
+        l.append(pool.apply_async(threeMACloseCal,
+                                  (sn,exchange_id, sec_id, K_MIN, opr, slip, oprresultpath)))
+    pool.close()
+    pool.join()
+
+    '''
+    for sn in range(topN):
+        print sn
+        opr = finalresult.iloc[sn]
+        newresultlist.append(threeMACloseCal(exchange_id,sec_id,K_MIN,opr,slip,oprresultpath))
+    '''
+    resultDf = pd.DataFrame(columns=['Setname', 'oldendcash','endcash','successrate','max_single_loss_rate','max_retrace_rate'])
+    i = 0
+    for res in l:
+        resultDf.loc[i]=res.get()
+        i+=1
+    tofilename = (oprresultpath+'\\ThreeMAClose\\'+symbol+str(K_MIN)+' '+' 3MA finalresult.csv')
+    resultDf.to_csv(tofilename)
