@@ -186,7 +186,8 @@ def LvyiWin(rawdata,paraset,contractswaplist):
     firsttradecash = initial_cash / margin_rate
     #2017-12-08:加入滑点
     result['ret']=((result['closeprice']-result['openprice'])*result['tradetype'])-slip
-    result['ret_r']=result['ret']/result['closeprice']
+    #result['ret_r']=result['ret']/result['closeprice']
+    result['ret_r'] = result['ret'] / result['openprice']
     result['commission_fee']=firsttradecash*commission_ratio*2
     result['funcuve']=firsttradecash
     result['per earn'] = 0 #单笔盈亏
