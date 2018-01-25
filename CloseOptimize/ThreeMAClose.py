@@ -23,8 +23,8 @@ import pandas as pd
 import DATA_CONSTANTS as DC
 import MA
 import multiprocessing
-
-def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,oprresultpath):
+import os
+def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,step,oprresultpath):
     print sn
     symbol = '.'.join([exchange_id, sec_id])
     initial_cash=20000
@@ -34,7 +34,11 @@ def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,oprresultpath):
     #计算mamid，并计算ma和cross
     mashort=oprset['MA_Short']
     malong=oprset['MA_Long']
-    mamid=int((mashort+malong)/2)
+    #mamid=int((mashort+malong)/2)
+    madelta=(malong-mashort)/4.0
+    mamid=mashort+int(step*madelta)
+    if mamid==malong:
+        mamid-=1
     bardata=DC.getBarData(symbol,K_MIN,'2016-01-01 00:00:00','2018-01-01 00:00:00')
     df_MA = MA.MA(bardata['close'], mashort, mamid)
     df_MA.drop('close', axis=1, inplace=True)
@@ -109,20 +113,20 @@ def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,oprresultpath):
     max_single_loss_rate = abs(oprresult['ret_r'].min())
     max_retrace_rate = oprresult['retrace rate'].max()
 
-    oprresult.to_csv(oprresultpath+'\\ThreeMAClose\\'+symbol+str(K_MIN)+' '+oprset['Setname']+' 3MAresult.csv')
+    oprresult.to_csv(oprresultpath+'\\ThreeMAClose'+str(step)+'to4\\'+symbol+str(K_MIN)+' '+oprset['Setname']+' 3MAresult'+str(step)+'.csv')
 
-    return [oprset['Setname'],endcash,newendcash,successrate,max_single_loss_rate,max_retrace_rate]
+    return [oprset['Setname'],mamid,endcash,newendcash,successrate,max_single_loss_rate,max_retrace_rate]
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'SHFE'
-    sec_id='RB'
+    exchange_id = 'DCE'
+    sec_id='I'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=2000
+    topN=10000
     slip=1
+    midsteplist=[1,2,3,4]
 
-    newresultlist=[]
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"
@@ -133,27 +137,24 @@ if __name__ == '__main__':
     finalresult=pd.read_csv(oprresultpath+"\\"+symbol+str(K_MIN)+" finanlresults.csv")
     finalresult=finalresult.sort_values(by='end_cash',ascending=False)
     #finalresult=finalresult.iloc[0:topN]
+    os.chdir(oprresultpath)
+    for step in midsteplist:
+        os.mkdir("ThreeMAClose"+str(step)+"to4")
+        newresultlist = []
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        l = []
 
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    l = []
+        for sn in range(topN):
+            opr = finalresult.iloc[sn]
+            l.append(pool.apply_async(threeMACloseCal,
+                                      (sn,exchange_id, sec_id, K_MIN, opr, slip, step,oprresultpath)))
+        pool.close()
+        pool.join()
 
-    for sn in range(topN):
-        opr = finalresult.iloc[sn]
-        l.append(pool.apply_async(threeMACloseCal,
-                                  (sn,exchange_id, sec_id, K_MIN, opr, slip, oprresultpath)))
-    pool.close()
-    pool.join()
-
-    '''
-    for sn in range(topN):
-        print sn
-        opr = finalresult.iloc[sn]
-        newresultlist.append(threeMACloseCal(exchange_id,sec_id,K_MIN,opr,slip,oprresultpath))
-    '''
-    resultDf = pd.DataFrame(columns=['Setname', 'oldendcash','endcash','successrate','max_single_loss_rate','max_retrace_rate'])
-    i = 0
-    for res in l:
-        resultDf.loc[i]=res.get()
-        i+=1
-    tofilename = (oprresultpath+'\\ThreeMAClose\\'+symbol+str(K_MIN)+' '+' 3MA finalresult.csv')
-    resultDf.to_csv(tofilename)
+        resultDf = pd.DataFrame(columns=['Setname','mamid', 'oldendcash','endcash','successrate','max_single_loss_rate','max_retrace_rate'])
+        i = 0
+        for res in l:
+            resultDf.loc[i]=res.get()
+            i+=1
+        tofilename = (oprresultpath+'\\ThreeMAClose'+str(step)+'to4\\'+symbol+str(K_MIN)+' '+' 3MA finalresult'+str(step)+'.csv')
+        resultDf.to_csv(tofilename)
