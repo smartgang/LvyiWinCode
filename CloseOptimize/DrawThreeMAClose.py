@@ -31,9 +31,9 @@ if __name__=='__main__':
     K_MIN = 600
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
-    parasetname='Set10748 MS5 ML13 KN22 DN30'
+    parasetname='Set10538 MS5 ML12 KN22 DN26'
     ms=5
-    ml=13
+    ml=12
 
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)

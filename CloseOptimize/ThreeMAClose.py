@@ -125,8 +125,8 @@ if __name__ == '__main__':
     K_MIN = 600
     topN=10000
     slip=DC.getPriceTick(symbol)
-    midsteplist=[1,2,3,4]
-
+    #midsteplist=[1,2,3,4]
+    midsteplist=[3]
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"
@@ -136,15 +136,16 @@ if __name__ == '__main__':
     #读取finalresult文件并排序，取前testnum个
     finalresult=pd.read_csv(oprresultpath+"\\"+symbol+str(K_MIN)+" finanlresults.csv")
     finalresult=finalresult.sort_values(by='end_cash',ascending=False)
+    totalnum=finalresult.shape[0]
     #finalresult=finalresult.iloc[0:topN]
     os.chdir(oprresultpath)
     for step in midsteplist:
-        os.mkdir("ThreeMAClose"+str(step)+"to4")
+        #os.mkdir("ThreeMAClose"+str(step)+"to4")
         newresultlist = []
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
         l = []
 
-        for sn in range(topN):
+        for sn in range(topN,totalnum):
             opr = finalresult.iloc[sn]
             l.append(pool.apply_async(threeMACloseCal,
                                       (sn,exchange_id, sec_id, K_MIN, opr, slip, step,oprresultpath)))
