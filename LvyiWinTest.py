@@ -131,8 +131,19 @@ for month in monthlist:
 import numpy
 #indexarray=range(5,30,1)
 #print indexarray
-b = numpy.arange(-0.01,-0.062,-0.002)
-print b
+#b = numpy.arange(-0.01,-0.062,-0.002)
+#print b
+s=4
+for l in range(10,28):
+    steplist=[1,2,3,4]
+    delta=(l-s)/4.0
+    print 'l:',l
+    print 'delta:',delta
+    midlist=[]
+    for i in steplist:
+        #print i*delta
+        midlist.append(s+int(i*delta))
+    print midlist
 '''
 '''
 #生成月份列表
@@ -167,8 +178,6 @@ import DATA_CONSTANTS as DC
 p=DC.getUpperPath()
 print p
 '''
-
-# -*- coding: utf-8 -*-
 '''
 计算1mk的ATR
 从N-1开始遍历10mk，取0~N-2的ATR:trlist
@@ -178,8 +187,9 @@ for i in range(rng):
     df1m['ATR']=trlist.mean()
     del trlist[-1]
 '''
-import pandas as pd
-N=20
-df10m=pd.read_csv("SHFE.RB 600_TR.csv")
-atlist=df10m.loc[:N-1]['TR'].tolist()
-print atlist
+'''
+#查询最小价格变动
+import DATA_CONSTANTS as DC
+symbol='DCE.I'
+print DC.getPriceTick(symbol)
+'''

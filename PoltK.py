@@ -12,7 +12,7 @@ import os
 import numpy
 
 #def draw(axes,df,opropendf,oprclosedf,oprbeginindex,title='K-Line'):
-def draw(axes,df,title='K-Line'):
+def drawK(axes,df,title='K-Line'):
     high = df['high']
     low = df['low']
     open = df['open']
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         #myquantcloseopr = myquantcloseopr.reset_index(drop=True)
         #myquantbeginindex=myquantdf.ix[0,'Unnamed: 0']-76
 
-        draw(axesUp,ricedf,"K-Line To MA waveing"+monthlist[i])
+        drawK(axesUp,ricedf,"K-Line To MA waveing"+monthlist[i])
         draw_wave(axesMid,ricedf,'price_wave')
         draw_wave(axesDown,ricedf,'volume_wave')
         #draw(axesUp,ricedf,riceipenopr,ricecloseopr,ricebegginindex,'rice-K-Set6213-'+monthlist[i]+'--'+monthlist[i+1])

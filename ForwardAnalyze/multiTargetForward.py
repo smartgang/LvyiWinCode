@@ -28,7 +28,7 @@ def calWhiteResult(whiteWindows,symbol,K_MIN,parasetlist,monthlist,datapath,resu
     drawback_total_list=[]
     for i in np.arange(0, parasetlen):
         setname=parasetlist.ix[i,'Setname']
-        print setname
+        #print setname
         filename=datapath+symbol + str(K_MIN) + ' ' + setname + ' result.csv'
         resultdf=pd.read_csv(filename)
         annual_list=[]
@@ -305,8 +305,8 @@ def calOprResult(rawpath,symbol,K_MIN):
     pass
 
 def runPara(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,resultpath,rankpath):
-    #calWhiteResult(whiteWindows=whiteWindows, symbol=symbol, K_MIN=K_MIN, parasetlist=parasetlist,
-    #                   monthlist=monthlist, datapath=rawdatapath, resultpath=resultpath)
+    calWhiteResult(whiteWindows=whiteWindows, symbol=symbol, K_MIN=K_MIN, parasetlist=parasetlist,
+                       monthlist=monthlist, datapath=rawdatapath, resultpath=resultpath)
     rankByWhiteResult(symbol=symbol, K_MIN=K_MIN, whiteWindows=whiteWindows, datapath=resultpath, resultpath=rankpath)
 
 def  getMonthParameter(startmonth,endmonth,ranktarget,windowns,symbol,K_MIN,parasetlist,oprresultpath,targetpath):
@@ -387,13 +387,13 @@ if __name__ == '__main__':
     #whiteWindows = 12
     #monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
     #            'Jan-17','Feb-17','Mar-17','Apr-17','May-17','Jun-17','Jul-17','Aug-17','Sep-17','Oct-17','Nov-17','Dec-17']
-    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2013-10-01', end='2018-01-01',freq='M'))]
+    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2016-01-01', end='2018-01-01',freq='M'))]
     parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
-    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\'
-    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\ForwardResults\\'
-    rankpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 3600\\ForwardRank\\'
+    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
+    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardResults\\'
+    rankpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardRank\\'
     symbol='DCE.I'
-    K_MIN=3600
+    K_MIN=600
     starttime=datetime.now()
     print starttime
     '''
@@ -402,15 +402,15 @@ if __name__ == '__main__':
         rankByWhiteResult(symbol=symbol,K_MIN=K_MIN,whiteWindows=whiteWindows,datapath=resultpath,resultpath=rankpath)
     '''
     # 多进程优化，启动一个对应CPU核心数量的进程池
-    '''
-    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() )
     l = []
     for whiteWindows in windowsSet:
         l.append(pool.apply_async(runPara,(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,resultpath,rankpath)))
     pool.close()
     pool.join()
-    '''
-    #calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
+
+    calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
     calOprResult(rawdatapath,symbol,K_MIN)
     endtime = datetime.now()
     print starttime

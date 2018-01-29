@@ -124,7 +124,7 @@ if __name__ == '__main__':
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
     topN=10000
-    slip=1
+    slip=DC.getPriceTick(symbol)
     midsteplist=[1,2,3,4]
 
     #文件路径
