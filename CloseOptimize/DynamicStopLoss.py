@@ -313,12 +313,15 @@ if __name__ == '__main__':
         pool.join()
 
         resultdf=pd.DataFrame(columns=['setname','slTarget','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
-                                                  'new_end cash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
+                                                  'new_endcash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
         i = 0
         for res in l:
             resultdf.loc[i]=res.get()
             allresultdf.loc[allnum]=resultdf.loc[i]
             i+=1
             allnum+=1
-        resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+'_'+str(stoplossTarget)+'finalresult_by_tick.csv')
+        resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
+        resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(stoplossTarget)+'.csv')
+        allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+
     allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')
