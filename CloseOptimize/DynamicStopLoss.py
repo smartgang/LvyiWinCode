@@ -11,6 +11,9 @@
 import pandas as pd
 import DATA_CONSTANTS as DC
 import numpy as np
+import os
+import ResultStatistics as RS
+import multiprocessing
 
 def max_draw(bardf):
     '''
@@ -98,7 +101,7 @@ def getShortDrawback(bardf,stopTarget):
     return max_dd,max_dd_close,maxprice,strtime,utctime,timeindex
 
 def getLongDrawbackByTick(bardf,stopTarget):
-    df = pd.DataFrame({'high': bardf.high,'low':bardf.low, 'strtime': bardf['strtime'], 'utc_time': bardf['utc_time'],
+    df = pd.DataFrame({'high': bardf['longHigh'],'low':bardf['longLow'], 'strtime': bardf['strtime'], 'utc_time': bardf['utc_time'],
                        'timeindex': bardf['Unnamed: 0']})
     df['max2here']=df['high'].expanding().max()
     df['dd2here'] = df['low'] / df['max2here'] - 1
@@ -122,7 +125,7 @@ def getLongDrawbackByTick(bardf,stopTarget):
     return max_dd,max_dd_close,maxprice,strtime,utctime,timeindex
 
 def getShortDrawbackByTick(bardf,stopTarget):
-    df = pd.DataFrame({'high': bardf.high,'low':bardf.low ,'strtime': bardf['strtime'], 'utc_time': bardf['utc_time'],
+    df = pd.DataFrame({'high': bardf['shortHigh'],'low':bardf['shortLow'] ,'strtime': bardf['strtime'], 'utc_time': bardf['utc_time'],
                        'timeindex': bardf['Unnamed: 0']})
     df['min2here']=df['low'].expanding().min()
     df['dd2here'] = 1 - df['high'] / df['min2here']
@@ -144,104 +147,178 @@ def getShortDrawbackByTick(bardf,stopTarget):
         utctime = 0
         timeindex = 0
     return max_dd,max_dd_close,maxprice,strtime,utctime,timeindex
+
+
+def dslCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,slTarget,tofolder):
+    print 'sl;', str(slTarget), ',setname:', setname
+    oprdf = pd.read_csv(symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+    oprdf['new_closeprice'] = oprdf['closeprice']
+    oprdf['new_closetime'] = oprdf['closetime']
+    oprdf['new_closeindex'] = oprdf['closeindex']
+    oprdf['new_closeutc'] = oprdf['closeutc']
+    oprdf['max_opr_gain'] = 0 #本次操作期间的最大收益
+    oprdf['min_opr_gain'] = 0#本次操作期间的最小收益
+    oprdf['max_dd'] = 0
+    oprnum = oprdf.shape[0]
+    for i in range(oprnum):
+        opr = oprdf.iloc[i]
+        startutc = (barxm.loc[barxm['utc_time'] == opr.openutc]).iloc[0].utc_endtime - 60#从开仓的10m线结束后开始
+        endutc = (barxm.loc[barxm['utc_time'] == opr.closeutc]).iloc[0].utc_endtime#一直到平仓的10m线结束
+        oprtype = opr.tradetype
+        openprice = opr.openprice
+        data1m = bar1m.loc[(bar1m['utc_time'] > startutc) & (bar1m['utc_time'] < endutc)]
+        if oprtype == 1:
+            # 多仓，取最大回撤，max为最大收益，min为最小收益
+            max_dd, dd_close, maxprice, strtime, utctime, timeindex = getLongDrawbackByTick(data1m, slTarget)
+            oprdf.ix[i, 'max_opr_gain'] = (data1m.high.max() - openprice) / openprice#1min用close,tick用high和low
+            oprdf.ix[i, 'min_opr_gain'] = (data1m.low.min() - openprice) / openprice
+            oprdf.ix[i, 'max_dd'] = max_dd
+            if max_dd <= slTarget:
+                ticknum = round((maxprice * slTarget) / pricetick, 0) - 1
+                oprdf.ix[i, 'new_closeprice'] = maxprice + ticknum * pricetick - slip
+                oprdf.ix[i, 'new_closetime'] = strtime
+                oprdf.ix[i, 'new_closeindex'] = timeindex
+                oprdf.ix[i, 'new_closeutc'] = utctime
+
+        else:
+            # 空仓，取逆向最大回撤，min为最大收益，max为最小收闪
+            max_dd, dd_close, minprice, strtime, utctime, timeindex = getShortDrawbackByTick(data1m, slTarget)
+            oprdf.ix[i, 'max_opr_gain'] = (openprice - data1m.close.min()) / openprice
+            oprdf.ix[i, 'min_opr_gain'] = (openprice - data1m.close.max()) / openprice
+            oprdf.ix[i, 'max_dd'] = max_dd
+            if max_dd <= slTarget:
+                ticknum = round((minprice * slTarget) / pricetick, 0) - 1
+                oprdf.ix[i, 'new_closeprice'] = minprice - ticknum * pricetick + slip
+                oprdf.ix[i, 'new_closetime'] = strtime
+                oprdf.ix[i, 'new_closeindex'] = timeindex
+                oprdf.ix[i, 'new_closeutc'] = utctime
+
+    initial_cash = 20000
+    margin_rate = 0.2
+    commission_ratio = 0.00012
+    firsttradecash = initial_cash / margin_rate
+    # 2017-12-08:加入滑点
+    oprdf['new_ret'] = ((oprdf['new_closeprice'] - oprdf['openprice']) * oprdf['tradetype']) - slip
+    oprdf['new_ret_r'] = oprdf['new_ret'] / oprdf['openprice']
+    oprdf['new_commission_fee'] = firsttradecash * commission_ratio * 2
+    oprdf['new_per earn'] = 0  # 单笔盈亏
+    oprdf['new_own cash'] = 0  # 自有资金线
+    oprdf['new_trade money'] = 0  # 杠杆后的可交易资金线
+    oprdf['new_retrace rate'] = 0  # 回撤率
+
+    oprdf.ix[0, 'new_per earn'] = firsttradecash * oprdf.ix[0, 'new_ret_r']
+    maxcash = initial_cash + oprdf.ix[0, 'new_per earn'] - oprdf.ix[0, 'new_commission_fee']
+    oprdf.ix[0, 'new_own cash'] = maxcash
+    oprdf.ix[0, 'new_trade money'] = oprdf.ix[0, 'new_own cash'] / margin_rate
+    oprtimes = oprdf.shape[0]
+    for i in np.arange(1, oprtimes):
+        commission = oprdf.ix[i - 1, 'new_trade money'] * commission_ratio * 2
+        perearn = oprdf.ix[i - 1, 'new_trade money'] * oprdf.ix[i, 'new_ret_r']
+        owncash = oprdf.ix[i - 1, 'new_own cash'] + perearn - commission
+        maxcash = max(maxcash, owncash)
+        retrace_rate = (maxcash - owncash) / maxcash
+        oprdf.ix[i, 'new_own cash'] = owncash
+        oprdf.ix[i, 'new_commission_fee'] = commission
+        oprdf.ix[i, 'new_per earn'] = perearn
+        oprdf.ix[i, 'new_trade money'] = owncash / margin_rate
+        oprdf.ix[i, 'new_retrace rate'] = retrace_rate
+    #保存新的result文档
+    oprdf.to_csv(tofolder+symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_tick.csv')
+
+    #计算统计结果
+    oldendcash = oprdf.ix[oprnum - 1, 'own cash']
+    oldAnnual = RS.annual_return(oprdf)
+    oldSharpe = RS.sharpe_ratio(oprdf)
+    oldDrawBack = RS.max_drawback(oprdf)[0]
+    oldSR = RS.success_rate(oprdf)
+    newendcash = oprdf.ix[oprnum - 1, 'new_own cash']
+    newAnnual = RS.annual_return(oprdf,cash_col='new_own cash',closeutc_col='new_closeutc')
+    newSharpe = RS.sharpe_ratio(oprdf,cash_col='new_own cash',closeutc_col='new_closeutc',retr_col='new_ret_r')
+    newDrawBack = RS.max_drawback(oprdf,cash_col='new_own cash')[0]
+    newSR = RS.success_rate(oprdf,ret_col='new_ret')
+    max_single_loss_rate = abs(oprdf['new_ret_r'].min())
+    max_retrace_rate = oprdf['new_retrace rate'].max()
+
+    return [setname,slTarget,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
+
+
 if __name__ == '__main__':
-    stoplossStep=-0.002
-    stoplossList = np.arange(-0.01, -0.062, stoplossStep)
-    slip = 0.5
-    pricetick=0.5
-    symbol="DCE.I"
+    #参数配置
+    exchange_id = 'DCE'
+    sec_id='I'
+    symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    oprresultpath = "D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600 ricequant\ForwardOprAnalyze\\"
-    setname = "DCE.I600_Rank5_win8"
-    bar1m = pd.read_csv(DC.BAR_DATA_PATH + symbol + '\\' + symbol + ' ' + str(60) + '.csv')
-    barxm = pd.read_csv(DC.BAR_DATA_PATH + symbol + '\\' + symbol + ' ' + str(K_MIN) + '.csv')
-    endcashList=[]
+    topN=50
+    pricetick=DC.getPriceTick(symbol)
+    slip=pricetick
+    starttime='2016-01-01 00:00:00'
+    endtime='2018-01-01 00:00:00'
+    #优化参数
+    stoplossStep=-0.002
+    stoplossList = np.arange(-0.02, -0.04, stoplossStep)
+
+    #文件路径
+    upperpath=DC.getUpperPath(uppernume=2)
+    resultpath=upperpath+"\\Results\\"
+    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    oprresultpath=resultpath+foldername
+
+    # 读取finalresult文件并排序，取前topN个
+    finalresult=pd.read_csv(oprresultpath+"\\"+symbol+str(K_MIN)+" finanlresults.csv")
+    finalresult=finalresult.sort_values(by='end_cash',ascending=False)
+    totalnum=finalresult.shape[0]
+
+    #原始数据处理
+    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime,endtime=endtime)
+    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime,endtime=endtime)
+    #bar1m计算longHigh,longLow,shortHigh,shortLow
+    bar1m['longHigh']=bar1m['high']
+    bar1m['shortHigh']=bar1m['high']
+    bar1m['longLow']=bar1m['low']
+    bar1m['shortLow']=bar1m['low']
+    bar1m['highshift1']=bar1m['high'].shift(1).fillna(0)
+    bar1m['lowshift1']=bar1m['low'].shift(1).fillna(0)
+    bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
+    bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
+
+    os.chdir(oprresultpath)
+    allresultdf = pd.DataFrame(columns=['setname', 'slTarget', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+                                     'old_SR',
+                                     'new_end cash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
+                                     'maxSingleLoss', 'maxSingleDrawBack'])
+    allnum=0
     for stoplossTarget in stoplossList:
+        resultList = []
+        dslFolderName="DynamicStopLoss" + str(stoplossTarget*1000)
+        os.mkdir(dslFolderName)#创建文件夹
         print ("stoplossTarget:%f"%stoplossTarget)
-        oprdf = pd.read_csv(oprresultpath + setname +"_oprResult.csv")
-        #oprdf['new_closetime'] = oprdf['closetime']
-        #oprdf['new_closeindex'] = oprdf['closeindex']
-        #oprdf['new_closeutc'] = oprdf['closeutc']
-        oprdf['new_closeprice'] = oprdf['closeprice']
-        oprdf['max_opr_gain'] = 0
-        oprdf['min_opr_gain'] = 0
-        oprdf['max_dd'] =0
-        oprnum = oprdf.shape[0]
-        for i in range(oprnum):
-            opr = oprdf.iloc[i]
-            startutc = (barxm.loc[barxm['utc_time']==opr.openutc]).iloc[0].utc_endtime-60
-            endutc = (barxm.loc[barxm['utc_time']==opr.closeutc]).iloc[0].utc_endtime
-            oprtype = opr.tradetype
-            openprice = opr.openprice
-            data1m = bar1m.loc[(bar1m['utc_time'] > startutc) & (bar1m['utc_time'] < endutc)]
-            if oprtype == 1:
-                #多仓，取最大回撤，max为最大收益，min为最小收益
-                max_dd,dd_close,maxprice,strtime,utctime,timeindex=getLongDrawbackByTick(data1m,stoplossTarget)
-                oprdf.ix[i, 'max_opr_gain'] = (data1m.close.max() - openprice)/openprice
-                oprdf.ix[i, 'min_opr_gain'] = (data1m.close.min() - openprice)/openprice
-                oprdf.ix[i,'max_dd'] = max_dd
-                if max_dd<=stoplossTarget:
-                    ticknum=round((maxprice*stoplossTarget)/pricetick,0)-1
-                    oprdf.ix[i, 'new_closeprice'] = maxprice +ticknum*pricetick-slip
-                '''
-                if max_dd !=0:
-                    #超过门限，触发动态止损
-                    oprdf.ix[i, 'new_closetime'] = strtime
-                    oprdf.ix[i, 'new_closeindex'] = timeindex
-                    oprdf.ix[i, 'new_closeutc'] = utctime
-                    oprdf.ix[i, 'new_closeprice'] = dd_close-slip
-                '''
-            else:
-                #空仓，取逆向最大回撤，min为最大收益，max为最小收闪
-                max_dd, dd_close, minprice, strtime, utctime, timeindex = getShortDrawbackByTick(data1m,stoplossTarget)
-                oprdf.ix[i, 'max_opr_gain'] = (openprice - data1m.close.min()) / openprice
-                oprdf.ix[i, 'min_opr_gain'] = (openprice - data1m.close.max()) / openprice
-                oprdf.ix[i, 'max_dd'] = max_dd
-                if max_dd<=stoplossTarget:
-                    ticknum=round((minprice*stoplossTarget)/pricetick,0)-1
-                    oprdf.ix[i, 'new_closeprice'] = minprice - ticknum*pricetick + slip
-                '''
-                if max_dd !=0:
-                    # 超过门限，触发动态止损
-                    oprdf.ix[i, 'new_closetime'] = strtime
-                    oprdf.ix[i, 'new_closeindex'] = timeindex
-                    oprdf.ix[i, 'new_closeutc'] = utctime
-                    oprdf.ix[i, 'new_closeprice'] = dd_close + slip
-                '''
-        initial_cash = 20000
-        margin_rate = 0.2
-        commission_ratio = 0.00012
-        firsttradecash = initial_cash / margin_rate
-        # 2017-12-08:加入滑点
-        oprdf['new_ret'] = ((oprdf['new_closeprice'] - oprdf['openprice']) * oprdf['tradetype']) - slip
-        oprdf['new_ret_r'] = oprdf['new_ret'] / oprdf['new_closeprice']
-        oprdf['new_commission_fee'] = firsttradecash * commission_ratio * 2
-        oprdf['new_per earn'] = 0  # 单笔盈亏
-        oprdf['new_own cash'] = 0  # 自有资金线
-        oprdf['new_trade money'] = 0  # 杠杆后的可交易资金线
-        oprdf['new_retrace rate'] = 0  # 回撤率
+        '''
+        for sn in range(0, topN):
+            opr = finalresult.iloc[sn]
+            setname=opr['Setname']
+            l=dslCal(symbol=symbol,K_MIN=K_MIN,setname=setname,bar1m=bar1m,barxm=barxm,pricetick=pricetick,slip=slip,slTarget=stoplossTarget,tofolder=dslFolderName+'\\')
+            resultList.append(l)
+            allresultlist.append(l)
+        '''
 
-        oprdf.ix[0, 'new_per earn'] = firsttradecash * oprdf.ix[0, 'new_ret_r']
-        maxcash = initial_cash + oprdf.ix[0, 'new_per earn'] - oprdf.ix[0, 'new_commission_fee']
-        oprdf.ix[0, 'new_own cash'] = maxcash
-        oprdf.ix[0, 'new_trade money'] = oprdf.ix[0, 'new_own cash'] / margin_rate
-        oprtimes = oprdf.shape[0]
-        for i in np.arange(1, oprtimes):
-            commission = oprdf.ix[i - 1, 'new_trade money'] * commission_ratio * 2
-            perearn = oprdf.ix[i - 1, 'new_trade money'] * oprdf.ix[i, 'new_ret_r']
-            owncash = oprdf.ix[i - 1, 'new_own cash'] + perearn - commission
-            maxcash = max(maxcash, owncash)
-            retrace_rate = (maxcash - owncash) / maxcash
-            oprdf.ix[i, 'new_own cash'] = owncash
-            oprdf.ix[i, 'new_commission_fee'] = commission
-            oprdf.ix[i, 'new_per earn'] = perearn
-            oprdf.ix[i, 'new_trade money'] = owncash / margin_rate
-            oprdf.ix[i, 'new_retrace rate'] = retrace_rate
+        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+        l = []
 
-        oprdf.to_csv(setname+'DSL_tick'+str(stoplossTarget)+'.csv')
+        for sn in range(0,topN):
+            opr = finalresult.iloc[sn]
+            setname = opr['Setname']
+            l.append(pool.apply_async(dslCal,
+                                      (symbol, K_MIN, setname, bar1m,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
+        pool.close()
+        pool.join()
 
-        endcash = oprdf.ix[oprtimes - 1, 'new_own cash']
-        endcashList.append([stoplossTarget,endcash])
-    endcashdf=pd.DataFrame(endcashList,columns=['SL-Target','end cash'])
-    endcashdf.to_csv(setname+'_tick_endcash.csv')
-    pass
+        resultdf=pd.DataFrame(columns=['setname','slTarget','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
+                                                  'new_end cash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
+        i = 0
+        for res in l:
+            resultdf.loc[i]=res.get()
+            allresultdf.loc[allnum]=resultdf.loc[i]
+            i+=1
+            allnum+=1
+        resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+'_'+str(stoplossTarget)+'finalresult_by_tick.csv')
+    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')
