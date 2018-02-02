@@ -5,6 +5,7 @@
 '''
 import pandas as pd
 import numpy as np
+import DATA_CONSTANTS as DC
 
 def monthyRetR(parasetlist,datapath,symbol,K_MIN):
     parasetlen = parasetlist.shape[0]
@@ -29,8 +30,20 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
     return tf
 
 if __name__ == '__main__':
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
-    datapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
-    symbol='DCE.I'
-    K_MIN=600
+
+    #参数配置
+    exchange_id = 'DCE'
+    sec_id='I'
+    K_MIN = 600
+    symbol = '.'.join([exchange_id, sec_id])
+    
+    #文件路径
+    upperpath=DC.getUpperPath(uppernume=2)
+    resultpath=upperpath+"\\Results\\"
+    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    oprresultpath=resultpath+foldername
+
+    parasetlist = pd.read_csv(resultpath+'ParameterOptSet1.csv')
+    datapath =resultpath+foldername+'\\'
+
     monthyRetR(parasetlist,datapath,symbol,K_MIN)
