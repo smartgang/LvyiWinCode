@@ -193,3 +193,22 @@ import DATA_CONSTANTS as DC
 symbol='DCE.I'
 print DC.getPriceTick(symbol)
 '''
+
+import DATA_CONSTANTS as DC
+symbol='DCE.I'
+K_MIN=600
+starttime = '2016-01-01 00:00:00'
+endtime = '2018-01-01 00:00:00'
+bar1m = DC.getBarData(symbol=symbol, K_MIN=60, starttime=starttime, endtime=endtime)
+barxm = DC.getBarData(symbol=symbol, K_MIN=K_MIN, starttime=starttime, endtime=endtime)
+# bar1m计算longHigh,longLow,shortHigh,shortLow
+bar1m['longHigh'] = bar1m['high']
+bar1m['shortHigh'] = bar1m['high']
+bar1m['longLow'] = bar1m['low']
+bar1m['shortLow'] = bar1m['low']
+bar1m['highshift1'] = bar1m['high'].shift(1).fillna(0)
+bar1m['lowshift1'] = bar1m['low'].shift(1).fillna(0)
+bar1m.loc[bar1m['open'] < bar1m['close'],'longHigh'] = bar1m['highshift1']
+bar1m.loc[bar1m['open'] > bar1m['close'],'shortLow'] = bar1m['lowshift1']
+
+bar1m.to_csv('longHighTest.csv')
