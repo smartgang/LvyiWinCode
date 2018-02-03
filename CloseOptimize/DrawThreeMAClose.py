@@ -25,15 +25,15 @@ import numpy
 
 if __name__=='__main__':
     #参数设置
-    exchange_id = 'DCE'
-    sec_id='I'
+    exchange_id = 'SHFE'
+    sec_id='RB'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
-    parasetname='Set10538 MS5 ML12 KN22 DN26'
-    ms=5
-    ml=12
+    parasetname='Set9309 MS4 ML29 KN24 DN32'
+    ms=4
+    ml=29
 
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)

@@ -119,8 +119,8 @@ def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,step,oprresultpath):
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'DCE'
-    sec_id='I'
+    exchange_id = 'SHFE'
+    sec_id='RB'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
     topN=10000
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     for step in midsteplist:
         #os.mkdir("ThreeMAClose"+str(step)+"to4")
         newresultlist = []
-        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
         l = []
 
         for sn in range(topN,totalnum):
