@@ -14,6 +14,10 @@ import multiprocessing
 from DynamicStopLoss import *
 from OnceWinNoLoss import  *
 
+CloseType_Normal=0
+CloseType_DSL=1
+CloseType_OWNL=2
+
 def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownlFolder,tofolder):
     print 'setname:', setname
     oprdf = pd.read_csv(symbol + str(K_MIN) + ' ' + setname + ' result.csv')
@@ -35,24 +39,38 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
     oprdf['new_closetime'] = oprdf['closetime']
     oprdf['new_closeindex'] = oprdf['closeindex']
     oprdf['new_closeutc'] = oprdf['closeutc']
+    #标注平仓类型
+    oprdf['closetype']=CloseType_Normal
+    oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'closetype'] = CloseType_DSL
+    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'closetye'] = CloseType_OWNL
 
-    oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'new_closeprice']= oprdf['dsl_closeprice']
-    oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'new_closetime'] = oprdf['dsl_closetime']
-    oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'new_closeindex'] = oprdf['dsl_closeindex']
-    oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'new_closeutc'] = oprdf['dsl_closeutc']
-
-    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'new_closeprice']= oprdf['ownl_closeprice']
-    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'new_closetime'] = oprdf['ownl_closetime']
-    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'new_closeindex'] = oprdf['ownl_closeindex']
-    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'new_closeutc'] = oprdf['ownl_closeutc']
-
-    equaredf=oprdf.loc[oprdf['dsl_closeutc'] == oprdf['ownl_closeutc']]
+    #两者时间相等，而且早于正常的平仓时间，则取收益大的作为平仓方法
+    equaredf=oprdf.loc[(oprdf['dsl_closeutc'] == oprdf['ownl_closeutc']) & (oprdf['dsl_closeutc']<oprdf['closeutc'])]
     if equaredf.shape[0]>0:
         indexlist=equaredf.index.tolist()
         for i in indexlist:
             if equaredf.ix[i,'tradetype']==1:
-                if equaredf.ix[i,'dsl_closeprice']>=
-                oprdf.ix[i,'new_closeprice']=
+                #多仓，价格高的收益
+                if equaredf.ix[i,'dsl_closeprice']> equaredf.ix[i,'ownl_closeprice']:
+                    oprdf.ix[i,'closetype']= CloseType_DSL
+                else:
+                    oprdf.ix[i,'closetype']= CloseType_OWNL
+            else:
+                if equaredf.ix[i,'dsl_closeprice']< equaredf.ix[i,'ownl_closeprice']:
+                    oprdf.ix[i,'closetype']= CloseType_DSL
+                else:
+                    oprdf.ix[i,'closetype']=CloseType_OWNL
+
+    oprdf.loc[oprdf['closetype'] ==CloseType_DSL, 'new_closeprice']= oprdf['dsl_closeprice']
+    oprdf.loc[oprdf['closetype'] ==CloseType_DSL, 'new_closetime'] = oprdf['dsl_closetime']
+    oprdf.loc[oprdf['closetype'] ==CloseType_DSL,'new_closeindex'] = oprdf['dsl_closeindex']
+    oprdf.loc[oprdf['closetype'] ==CloseType_DSL,'new_closeutc'] = oprdf['dsl_closeutc']
+
+    oprdf.loc[oprdf['closetype'] ==CloseType_OWNL, 'new_closeprice']= oprdf['ownl_closeprice']
+    oprdf.loc[oprdf['closetype'] ==CloseType_OWNL, 'new_closetime'] = oprdf['ownl_closetime']
+    oprdf.loc[oprdf['closetype'] ==CloseType_OWNL, 'new_closeindex'] = oprdf['ownl_closeindex']
+    oprdf.loc[oprdf['closetype'] ==CloseType_OWNL, 'new_closeutc'] = oprdf['ownl_closeutc']
+
     initial_cash = 20000
     margin_rate = 0.2
     commission_ratio = 0.00012
