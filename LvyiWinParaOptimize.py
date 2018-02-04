@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
 
     # 多进程优化，启动一个对应CPU核心数量的进程池
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1  )
     l = []
 
     for i in np.arange(0, parasetlen):
