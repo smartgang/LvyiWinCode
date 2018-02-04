@@ -285,7 +285,7 @@ def calOprResult(rawpath,symbol,K_MIN):
         tofilename=('%s%d_%s_win%d_oprResult.csv'%(symbol,K_MIN,gray.Target,gray.Windows))
         oprdf.to_csv(rawpath+'ForwardOprAnalyze\\'+tofilename)
 
-        annual = RS.annual_return(oprdf,cash_col='own cash',closeutc_col='new_colseutc')
+        annual = RS.annual_return(oprdf,cash_col='own cash',closeutc_col='new_closeutc')
         sharpe = RS.sharpe_ratio(oprdf,cash_col='own cash',closeutc_col='new_closeutc',retr_col='new_ret_r')
         average_change = RS.average_change(oprdf,retr_col='new_ret_r')
         successrate = RS.success_rate(oprdf,ret_col='new_ret')
@@ -330,15 +330,15 @@ if __name__ == '__main__':
     print starttime
 
     # 多进程优化，启动一个对应CPU核心数量的进程池
-
-    pool = multiprocessing.Pool(multiprocessing.cpu_count() )
+    '''
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1 )
     l = []
     for whiteWindows in windowsSet:
         l.append(pool.apply_async(runPara,(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,resultpath,rankpath)))
     pool.close()
     pool.join()
-
-    calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
+    '''
+    #calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
     calOprResult(rawdatapath,symbol,K_MIN)
     endtime = datetime.now()
     print starttime

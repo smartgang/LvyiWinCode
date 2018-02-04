@@ -109,9 +109,9 @@ def threeMACloseCal(sn,exchange_id,sec_id,K_MIN,oprset,slip,step,oprresultpath):
 
     endcash = oprresult.ix[oprnum - 1, 'own cash']
     newendcash = oprresult.ix[oprnum - 1, 'new_own cash']
-    successrate = (oprresult.loc[oprresult['ret'] > 0]).shape[0] / float(oprnum)
-    max_single_loss_rate = abs(oprresult['ret_r'].min())
-    max_retrace_rate = oprresult['retrace rate'].max()
+    successrate = (oprresult.loc[oprresult['new_ret'] > 0]).shape[0] / float(oprnum)
+    max_single_loss_rate = abs(oprresult['new_ret_r'].min())
+    max_retrace_rate = oprresult['new_retrace rate'].max()
 
     oprresult.to_csv(oprresultpath+'\\ThreeMAClose'+str(step)+'to4\\'+symbol+str(K_MIN)+' '+oprset['Setname']+' 3MAresult'+str(step)+'.csv')
 

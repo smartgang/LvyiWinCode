@@ -288,5 +288,5 @@ if __name__ == '__main__':
     result,df,closeopr,results=LvyiWin(rawdata,paraset,swaplist)
     print results
     result.to_csv(symbol+str(K_MIN)+'result.csv')
-    df.to_csv(symbol+str(K_MIN)+'all.csv')
+    #df.to_csv(symbol+str(K_MIN)+'all.csv')
     #closeopr.to_csv(symbol+str(K_MIN)+'closeopr.csv')

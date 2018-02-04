@@ -14,7 +14,7 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
         print setname
         #filename=datapath+symbol + str(K_MIN) + ' ' + setname + ' result.csv'
         filename=symbol+str(K_MIN)+' '+setname+' 3MAresult3.csv'
-        result=pd.read_csv(filename)
+        result=pd.read_csv(datapath+filename)
         result['month'] =result.opentime.str.slice(0, 7)#月是7，天是10
         #print result.month
         result['ret_r_1'] = result['new_ret_r'] + 1
@@ -24,7 +24,7 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
         prodlist.append(ret_r_prod)
 
     proddf=pd.DataFrame(prodlist)
-    proddf.index.name = 'Setname'
+    #proddf.index.name = 'Setname'
     tf="%s%s_%d_monthly_retr_3MA.csv" %(datapath,symbol,K_MIN)
     proddf.to_csv(tf)
     return tf

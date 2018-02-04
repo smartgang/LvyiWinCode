@@ -66,6 +66,7 @@ def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tof
     oprdf['new_closeindex'] = oprdf['closeindex']
     oprdf['new_closeutc'] = oprdf['closeutc']
     oprnum = oprdf.shape[0]
+    worknum=0
     for i in range(oprnum):
         opr = oprdf.iloc[i]
         startutc = (barxm.loc[barxm['utc_time'] == opr.openutc]).iloc[0].utc_endtime - 60#从开仓的10m线结束后开始
@@ -80,6 +81,7 @@ def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tof
                 oprdf.ix[i, 'new_closetime'] = strtime
                 oprdf.ix[i, 'new_closeindex'] = timeindex
                 oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
 
         else:
             newcloseprice, strtime, utctime, timeindex = getShortNoLossByTick(data1m, openprice, winSwitch,nolossThreshhold)
@@ -88,6 +90,7 @@ def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tof
                 oprdf.ix[i, 'new_closetime'] = strtime
                 oprdf.ix[i, 'new_closeindex'] = timeindex
                 oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
 
     initial_cash = 20000
     margin_rate = 0.2
@@ -135,7 +138,7 @@ def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tof
     max_single_loss_rate = abs(oprdf['new_ret_r'].min())
     max_retrace_rate = oprdf['new_retrace rate'].max()
 
-    return [setname,winSwitch,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
+    return [setname,winSwitch,worknum,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
 
 
 if __name__ == '__main__':
@@ -144,14 +147,14 @@ if __name__ == '__main__':
     sec_id='I'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=50
+    topN=1000
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
     #优化参数
-    stoplossStep=0.0005
-    winSwitchList = np.arange(0.002, 0.004, stoplossStep)
+    stoplossStep=0.001
+    winSwitchList = np.arange(0.005, 0.015, stoplossStep)
     nolossThreshhold=3*pricetick
 
     #文件路径
@@ -179,7 +182,7 @@ if __name__ == '__main__':
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
     os.chdir(oprresultpath)
-    allresultdf = pd.DataFrame(columns=['setname', 'winSwitch', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+    allresultdf = pd.DataFrame(columns=['setname', 'winSwitch','worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                                      'old_SR',
                                      'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
@@ -190,7 +193,7 @@ if __name__ == '__main__':
         os.mkdir(ownlFolderName)#创建文件夹
         print ("OnceWinNoLoss WinSwitch:%f"%winSwitch)
 
-        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
         l = []
 
         for sn in range(0,topN):
@@ -201,7 +204,7 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
 
-        resultdf=pd.DataFrame(columns=['setname','winSwitch','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
+        resultdf=pd.DataFrame(columns=['setname','winSwitch','worknum','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
                                                   'new_endcash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
         i = 0
         for res in l:

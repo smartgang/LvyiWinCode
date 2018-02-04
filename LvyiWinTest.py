@@ -194,6 +194,7 @@ symbol='DCE.I'
 print DC.getPriceTick(symbol)
 '''
 
+'''
 import DATA_CONSTANTS as DC
 symbol='DCE.I'
 K_MIN=600
@@ -212,3 +213,11 @@ bar1m.loc[bar1m['open'] < bar1m['close'],'longHigh'] = bar1m['highshift1']
 bar1m.loc[bar1m['open'] > bar1m['close'],'shortLow'] = bar1m['lowshift1']
 
 bar1m.to_csv('longHighTest.csv')
+'''
+import time
+print 'timer task test begin'
+i=0
+while 1:
+    print 'i:',i
+    time.sleep(10)
+    i+=1

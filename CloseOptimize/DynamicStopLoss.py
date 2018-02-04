@@ -248,14 +248,14 @@ if __name__ == '__main__':
     sec_id='I'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=50
+    topN=5000
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
     #优化参数
     stoplossStep=-0.002
-    stoplossList = np.arange(-0.02, -0.04, stoplossStep)
+    stoplossList = np.arange(-0.032, -0.042, stoplossStep)
 
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     os.chdir(oprresultpath)
     allresultdf = pd.DataFrame(columns=['setname', 'slTarget', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                                      'old_SR',
-                                     'new_end cash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
+                                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
     allnum=0
     for stoplossTarget in stoplossList:
@@ -301,7 +301,7 @@ if __name__ == '__main__':
             allresultlist.append(l)
         '''
 
-        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
         l = []
 
         for sn in range(0,topN):
@@ -322,6 +322,6 @@ if __name__ == '__main__':
             allnum+=1
         resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
         resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(stoplossTarget)+'.csv')
-        allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
 
+    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')

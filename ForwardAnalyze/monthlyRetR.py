@@ -30,13 +30,12 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
     return tf
 
 if __name__ == '__main__':
-
     #参数配置
     exchange_id = 'DCE'
     sec_id='I'
     K_MIN = 600
     symbol = '.'.join([exchange_id, sec_id])
-    
+
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"
