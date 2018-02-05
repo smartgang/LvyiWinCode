@@ -147,14 +147,14 @@ if __name__ == '__main__':
     sec_id='I'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=1000
+    topN=50
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
     #优化参数
     stoplossStep=0.001
-    winSwitchList = np.arange(0.005, 0.015, stoplossStep)
+    winSwitchList = np.arange(0.003, 0.011, stoplossStep)
     nolossThreshhold=3*pricetick
 
     #文件路径
@@ -190,7 +190,10 @@ if __name__ == '__main__':
     for winSwitch in winSwitchList:
         resultList = []
         ownlFolderName="OnceWinNoLoss" + str(winSwitch*1000)
-        os.mkdir(ownlFolderName)#创建文件夹
+        try:
+            os.mkdir(ownlFolderName)#创建文件夹
+        except:
+            print "dir already exist!"
         print ("OnceWinNoLoss WinSwitch:%f"%winSwitch)
 
         pool = multiprocessing.Pool(multiprocessing.cpu_count())

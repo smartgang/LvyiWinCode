@@ -160,6 +160,7 @@ def dslCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,slTarget,tofolder):
     oprdf['min_opr_gain'] = 0#本次操作期间的最小收益
     oprdf['max_dd'] = 0
     oprnum = oprdf.shape[0]
+    worknum=0
     for i in range(oprnum):
         opr = oprdf.iloc[i]
         startutc = (barxm.loc[barxm['utc_time'] == opr.openutc]).iloc[0].utc_endtime - 60#从开仓的10m线结束后开始
@@ -175,10 +176,11 @@ def dslCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,slTarget,tofolder):
             oprdf.ix[i, 'max_dd'] = max_dd
             if max_dd <= slTarget:
                 ticknum = round((maxprice * slTarget) / pricetick, 0) - 1
-                oprdf.ix[i, 'new_closeprice'] = maxprice + ticknum * pricetick - slip
+                oprdf.ix[i, 'new_closeprice'] = maxprice + ticknum * pricetick
                 oprdf.ix[i, 'new_closetime'] = strtime
                 oprdf.ix[i, 'new_closeindex'] = timeindex
                 oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
 
         else:
             # 空仓，取逆向最大回撤，min为最大收益，max为最小收闪
@@ -188,10 +190,11 @@ def dslCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,slTarget,tofolder):
             oprdf.ix[i, 'max_dd'] = max_dd
             if max_dd <= slTarget:
                 ticknum = round((minprice * slTarget) / pricetick, 0) - 1
-                oprdf.ix[i, 'new_closeprice'] = minprice - ticknum * pricetick + slip
+                oprdf.ix[i, 'new_closeprice'] = minprice - ticknum * pricetick
                 oprdf.ix[i, 'new_closetime'] = strtime
                 oprdf.ix[i, 'new_closeindex'] = timeindex
                 oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
 
     initial_cash = 20000
     margin_rate = 0.2
@@ -239,7 +242,7 @@ def dslCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,slTarget,tofolder):
     max_single_loss_rate = abs(oprdf['new_ret_r'].min())
     max_retrace_rate = oprdf['new_retrace rate'].max()
 
-    return [setname,slTarget,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
+    return [setname,slTarget,worknum,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
 
 
 if __name__ == '__main__':
@@ -282,7 +285,7 @@ if __name__ == '__main__':
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
     os.chdir(oprresultpath)
-    allresultdf = pd.DataFrame(columns=['setname', 'slTarget', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+    allresultdf = pd.DataFrame(columns=['setname', 'slTarget','worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                                      'old_SR',
                                      'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
@@ -290,7 +293,8 @@ if __name__ == '__main__':
     for stoplossTarget in stoplossList:
         resultList = []
         dslFolderName="DynamicStopLoss" + str(stoplossTarget*1000)
-        os.mkdir(dslFolderName)#创建文件夹
+        #try:
+        #os.mkdir(dslFolderName)#创建文件夹
         print ("stoplossTarget:%f"%stoplossTarget)
         '''
         for sn in range(0, topN):
@@ -304,7 +308,7 @@ if __name__ == '__main__':
         pool = multiprocessing.Pool(multiprocessing.cpu_count())
         l = []
 
-        for sn in range(0,topN):
+        for sn in range(0,totalnum):
             opr = finalresult.iloc[sn]
             setname = opr['Setname']
             l.append(pool.apply_async(dslCal,
@@ -312,12 +316,12 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
 
-        resultdf=pd.DataFrame(columns=['setname','slTarget','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
+        resultdf=pd.DataFrame(columns=['setname','slTarget','worknum','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
                                                   'new_endcash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
         i = 0
         for res in l:
             resultdf.loc[i]=res.get()
-            allresultdf.loc[allnum]=resultdf.loc[i]
+            #allresultdf.loc[allnum]=resultdf.loc[i]
             i+=1
             allnum+=1
         resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
