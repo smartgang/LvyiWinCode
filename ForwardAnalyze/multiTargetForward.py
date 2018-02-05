@@ -13,6 +13,8 @@ import time
 import ResultStatistics as RS
 from datetime import datetime
 import multiprocessing
+import DATA_CONSTANTS as DC
+import os
 
 def calWhiteResult(whiteWindows,symbol,K_MIN,parasetlist,monthlist,datapath,resultpath):
     '''
@@ -39,9 +41,9 @@ def calWhiteResult(whiteWindows,symbol,K_MIN,parasetlist,monthlist,datapath,resu
         sharpe_list.append(setname)
         success_rate_list.append(setname)
         drawback_list.append(setname)
-        for i in range(len(monthlist)-whiteWindows):
-            whiteWindowsStart=monthlist[i]+'-01 00:00:00'
-            whiteWindowsEnd=monthlist[i+whiteWindows]+'-01 00:00:00'
+        for i in range(13,len(monthlist)):#修改为从第13个月开始
+            whiteWindowsStart=monthlist[i-whiteWindows]+'-01 00:00:00'
+            whiteWindowsEnd=monthlist[i]+'-01 00:00:00'
             startutc=float(time.mktime(time.strptime(whiteWindowsStart,"%b-%y-%d %H:%M:%S")))
             endutc=float(time.mktime(time.strptime(whiteWindowsEnd,"%b-%y-%d %H:%M:%S")))
             resultdata=resultdf.loc[(resultdf['openutc']>=startutc) & (resultdf['openutc']<endutc)]
@@ -65,7 +67,7 @@ def calWhiteResult(whiteWindows,symbol,K_MIN,parasetlist,monthlist,datapath,resu
 
     colname=[]
     colname.append('Setname')
-    for m in monthlist[whiteWindows:]:
+    for m in monthlist[13:]:
         colname.append(m)
     annualdf=pd.DataFrame(annual_total_list,columns=colname)
     sharpedf=pd.DataFrame(sharpe_total_list,columns=colname)
@@ -194,7 +196,7 @@ def calGrayResult(symbol,K_MIN,windowsSet,rankpath,rawdatapath):
             retlist=[groupcounter,targetName,whiteWindows]
             ranknamehead = ("%s_%s_%d_win%d_" % (rankpath, symbol, K_MIN, whiteWindows))
             rankdf=pd.read_csv(ranknamehead+targetName+'.csv',index_col='Setname')  #排名文件
-            cols = rankdf.columns.tolist()[13-whiteWindows:]
+            cols = rankdf.columns.tolist()[-12:]
             colss=cols
             for col in cols:
                 #按列读取每个月的收益情况
@@ -239,7 +241,7 @@ def calOprResult(rawpath,symbol,K_MIN):
     '''
     graydf=pd.read_csv(rawpath+'ForwardOprAnalyze\\'+symbol+str(K_MIN)+'multiTargetForwardSetname.csv',index_col='Group')
     cols = graydf.columns.tolist()[3:]
-    cols.append('Jan-18')
+    cols.append('Feb-18')
     groupResult = []
     for i in range(graydf.shape[0]):
         gray=graydf.iloc[i]
@@ -379,38 +381,58 @@ def  getMonthParameter(startmonth,endmonth,ranktarget,windowns,symbol,K_MIN,para
     print datetime.now()
 
 if __name__ == '__main__':
-    #白区窗口值
-    #每次只需要修改这个值
+    #参数配置
+    exchange_id = 'SHFE'
+    sec_id='RB'
+    K_MIN = 600
+    symbol = '.'.join([exchange_id, sec_id])
+    startdate='2016-01-01'
+    enddate = '2018-02-01'
     #windowsSet=[1,2,3,4,5,6,9,12,15]
-    windowsSet=range(1,13)
-    #print windowsSet
-    #whiteWindows = 12
-    #monthlist=['Jan-16','Feb-16','Mar-16','Apr-16','May-16','Jun-16','Jul-16','Aug-16','Sep-16','Oct-16','Nov-16','Dec-16',
-    #            'Jan-17','Feb-17','Mar-17','Apr-17','May-17','Jun-17','Jul-17','Aug-17','Sep-17','Oct-17','Nov-17','Dec-17']
-    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start='2016-01-01', end='2018-01-01',freq='M'))]
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet1.csv')
-    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
-    resultpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardResults\\'
-    rankpath = 'D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\ForwardRank\\'
-    symbol='DCE.I'
-    K_MIN=600
+    windowsSet=range(1,13)#白区窗口值
+
+    #文件路径
+    upperpath=DC.getUpperPath(uppernume=2)
+    resultpath=upperpath+"\\Results\\"
+    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    rawdatapath=resultpath+foldername+'\\'
+    parasetlist = pd.read_csv(resultpath+'ParameterOptSet1.csv')
+    datapath =resultpath+foldername+'\\'
+    forwordresultpath =resultpath+foldername+'\\ForwardResults\\'
+    forwardrankpath = resultpath+foldername+'\\ForwardRank\\'
+
+    monthlist = [datetime.strftime(x,'%b-%y') for x in list(pd.date_range(start=startdate, end=enddate,freq='M'))]
+    os.chdir(datapath)
+    try:
+        os.mkdir('ForwardResults')
+    except:
+        print 'ForwardResults already exist!'
+    try:
+        os.mkdir('ForwardRank')
+    except:
+        print 'ForwardRank already exist!'
+    try:
+        os.mkdir('ForwardOprAnalyze')
+    except:
+        print 'ForwardOprAnalyze already exist!'
+
     starttime=datetime.now()
     print starttime
     '''
     for whiteWindows in windowsSet:
-        #calWhiteResult(whiteWindows=whiteWindows,symbol=symbol,K_MIN=K_MIN,parasetlist=parasetlist,monthlist=monthlist,datapath=rawdatapath,resultpath=resultpath)
-        rankByWhiteResult(symbol=symbol,K_MIN=K_MIN,whiteWindows=whiteWindows,datapath=resultpath,resultpath=rankpath)
+        #calWhiteResult(whiteWindows=whiteWindows,symbol=symbol,K_MIN=K_MIN,parasetlist=parasetlist,monthlist=monthlist,datapath=rawdatapath,resultpath=forwordresultpath)
+        rankByWhiteResult(symbol=symbol,K_MIN=K_MIN,whiteWindows=whiteWindows,datapath=forwordresultpath,resultpath=forwardrankpath)
     '''
     # 多进程优化，启动一个对应CPU核心数量的进程池
 
-    pool = multiprocessing.Pool(multiprocessing.cpu_count() )
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
     l = []
     for whiteWindows in windowsSet:
-        l.append(pool.apply_async(runPara,(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,resultpath,rankpath)))
+        l.append(pool.apply_async(runPara,(whiteWindows,symbol,K_MIN,parasetlist,monthlist,rawdatapath,forwordresultpath,forwardrankpath)))
     pool.close()
     pool.join()
 
-    calGrayResult(symbol, K_MIN, windowsSet, rankpath,rawdatapath)
+    calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath,rawdatapath)
     calOprResult(rawdatapath,symbol,K_MIN)
     endtime = datetime.now()
     print starttime
