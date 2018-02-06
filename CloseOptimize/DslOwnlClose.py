@@ -18,7 +18,7 @@ CloseType_Normal=0
 CloseType_DSL=1
 CloseType_OWNL=2
 
-def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownlFolder,tofolder):
+def dslAndownlCal(symbol,K_MIN,setname,slTarget,ownlWinSwitch,slip,dslFolder,ownlFolder,tofolder):
     print 'setname:', setname
     oprdf = pd.read_csv(symbol + str(K_MIN) + ' ' + setname + ' result.csv')
     dsloprname=symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_tick.csv'
@@ -29,11 +29,13 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
     oprdf['dsl_closetime'] = dsloprdf['new_closetime']
     oprdf['dsl_closeindex'] = dsloprdf['new_closeindex']
     oprdf['dsl_closeutc'] = dsloprdf['new_closeutc']
+    oprdf['dsl_ret']= dsloprdf['new_ret']
 
     oprdf['ownl_closeprice'] = ownloprdf['new_closeprice']
     oprdf['ownl_closetime'] = ownloprdf['new_closetime']
     oprdf['ownl_closeindex'] = ownloprdf['new_closeindex']
     oprdf['ownl_closeutc'] = ownloprdf['new_closeutc']
+    oprdf['ownl_ret'] = ownloprdf['new_ret']
 
     oprdf['new_closeprice'] = oprdf['closeprice']
     oprdf['new_closetime'] = oprdf['closetime']
@@ -42,7 +44,7 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
     #标注平仓类型
     oprdf['closetype']=CloseType_Normal
     oprdf.loc[oprdf['dsl_closeutc'] < oprdf['ownl_closeutc'], 'closetype'] = CloseType_DSL
-    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'closetye'] = CloseType_OWNL
+    oprdf.loc[oprdf['ownl_closeutc'] < oprdf['dsl_closeutc'], 'closetype'] = CloseType_OWNL
 
     #两者时间相等，而且早于正常的平仓时间，则取收益大的作为平仓方法
     equaredf=oprdf.loc[(oprdf['dsl_closeutc'] == oprdf['ownl_closeutc']) & (oprdf['dsl_closeutc']<oprdf['closeutc'])]
@@ -84,6 +86,7 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
     oprdf['new_trade money'] = 0  # 杠杆后的可交易资金线
     oprdf['new_retrace rate'] = 0  # 回撤率
 
+    oprnum=oprdf.shape[0]
     oprdf.ix[0, 'new_per earn'] = firsttradecash * oprdf.ix[0, 'new_ret_r']
     maxcash = initial_cash + oprdf.ix[0, 'new_per earn'] - oprdf.ix[0, 'new_commission_fee']
     oprdf.ix[0, 'new_own cash'] = maxcash
@@ -101,7 +104,7 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
         oprdf.ix[i, 'new_trade money'] = owncash / margin_rate
         oprdf.ix[i, 'new_retrace rate'] = retrace_rate
     #保存新的result文档
-    oprdf.to_csv(tofolder+symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_tick.csv')
+    oprdf.to_csv(tofolder+symbol + str(K_MIN) + ' ' + setname + ' result_dsl_ownl.csv')
 
     #计算统计结果
     oldendcash = oprdf.ix[oprnum - 1, 'own cash']
@@ -114,27 +117,31 @@ def dslAndownlCal(symbol,K_MIN,setname,bar1m,barxm,pricetick,slip,dslFolder,ownl
     newSharpe = RS.sharpe_ratio(oprdf,cash_col='new_own cash',closeutc_col='new_closeutc',retr_col='new_ret_r')
     newDrawBack = RS.max_drawback(oprdf,cash_col='new_own cash')[0]
     newSR = RS.success_rate(oprdf,ret_col='new_ret')
-    max_single_loss_rate = abs(oprdf['new_ret_r'].min())
-    max_retrace_rate = oprdf['new_retrace rate'].max()
-
-    return [setname,slTarget,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate,max_retrace_rate]
+    dslWorknum=oprdf.loc[oprdf['closetype']==CloseType_DSL].shape[0]
+    ownlWorknum=oprdf.loc[oprdf['closetype']==CloseType_OWNL].shape[0]
+    dslRetDelta = oprdf.loc[oprdf['closetype']==CloseType_DSL,'dsl_ret'].sum()\
+                  -oprdf.loc[oprdf['closetype']==CloseType_DSL,'new_ret'].sum()
+    ownlRetDelta = oprdf.loc[oprdf['closetype'] == CloseType_OWNL, 'ownl_ret'].sum() \
+                   - oprdf.loc[oprdf['closetype'] == CloseType_OWNL, 'new_ret'].sum()
+    return [setname,slTarget,ownlWinSwitch,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,dslWorknum,ownlWorknum,dslRetDelta,ownlRetDelta]
 
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'DCE'
-    sec_id='I'
+    exchange_id = 'SHFE'
+    sec_id='RB'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=50
+    topN=5
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
     starttime='2016-01-01 00:00:00'
     endtime='2018-01-01 00:00:00'
     #优化参数
-    stoplossStep=-0.002
-    stoplossList = np.arange(-0.02, -0.04, stoplossStep)
-
+    #stoplossStep=-0.002
+    #stoplossList = np.arange(-0.02, -0.04, stoplossStep)
+    stoplossList=[-0.022,-0.028]
+    winSwitchList=[0.009,0.01]
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"
@@ -146,60 +153,46 @@ if __name__ == '__main__':
     finalresult=finalresult.sort_values(by='end_cash',ascending=False)
     totalnum=finalresult.shape[0]
 
-    #原始数据处理
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime,endtime=endtime)
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime,endtime=endtime)
-    #bar1m计算longHigh,longLow,shortHigh,shortLow
-    bar1m['longHigh']=bar1m['high']
-    bar1m['shortHigh']=bar1m['high']
-    bar1m['longLow']=bar1m['low']
-    bar1m['shortLow']=bar1m['low']
-    bar1m['highshift1']=bar1m['high'].shift(1).fillna(0)
-    bar1m['lowshift1']=bar1m['low'].shift(1).fillna(0)
-    bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
-    bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
-
     os.chdir(oprresultpath)
-    allresultdf = pd.DataFrame(columns=['setname', 'slTarget', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                                     'old_SR',
-                                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
-                                     'maxSingleLoss', 'maxSingleDrawBack'])
+    allresultdf = pd.DataFrame(columns=['setname', 'dslTarget','ownlWinSwtich', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+                                     'old_SR','new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
+                                     'dslWorknum', 'ownlWorknum','dslRetDelta','ownlRetDelta'])
     allnum=0
     for stoplossTarget in stoplossList:
-        resultList = []
-        dslFolderName="DynamicStopLoss" + str(stoplossTarget*1000)
-        os.mkdir(dslFolderName)#创建文件夹
-        print ("stoplossTarget:%f"%stoplossTarget)
-        '''
-        for sn in range(0, topN):
-            opr = finalresult.iloc[sn]
-            setname=opr['Setname']
-            l=dslCal(symbol=symbol,K_MIN=K_MIN,setname=setname,bar1m=bar1m,barxm=barxm,pricetick=pricetick,slip=slip,slTarget=stoplossTarget,tofolder=dslFolderName+'\\')
-            resultList.append(l)
-            allresultlist.append(l)
-        '''
+        for winSwitch in winSwitchList:
+            resultList = []
+            dslFolderName="DynamicStopLoss" + str(stoplossTarget*1000)+'\\'
+            ownlFolderName="OnceWinNoLoss" + str(winSwitch*1000)+'\\'
+            newfolder=("dsl_%.3f_ownl_%.3f" % (stoplossTarget,winSwitch))
+            try:
+                os.mkdir(newfolder)#创建文件夹
+            except:
+                print newfolder,' already exist!'
+            print ("slTarget:%f ownlSwtich:%f"%(stoplossTarget,winSwitch))
 
-        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
-        l = []
+            pool = multiprocessing.Pool(multiprocessing.cpu_count())
+            l = []
 
-        for sn in range(0,topN):
-            opr = finalresult.iloc[sn]
-            setname = opr['Setname']
-            l.append(pool.apply_async(dslCal,
-                                      (symbol, K_MIN, setname, bar1m,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
-        pool.close()
-        pool.join()
+            for sn in range(0,totalnum):
+                opr = finalresult.iloc[sn]
+                setname = opr['Setname']
+                l.append(pool.apply_async(dslAndownlCal,
+                                          (symbol, K_MIN, setname, stoplossTarget,winSwitch,slip,dslFolderName,ownlFolderName,newfolder+'\\')))
+            pool.close()
+            pool.join()
 
-        resultdf=pd.DataFrame(columns=['setname','slTarget','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
-                                                  'new_endcash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
-        i = 0
-        for res in l:
-            resultdf.loc[i]=res.get()
-            allresultdf.loc[allnum]=resultdf.loc[i]
-            i+=1
-            allnum+=1
-        resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
-        resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(stoplossTarget)+'.csv')
+            resultdf=pd.DataFrame(columns=['setname', 'dslTarget','ownlWinSwtich', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+                                         'old_SR','new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
+                                         'dslWorknum', 'ownlWorknum','dslRetDelta','ownlRetDelta'])
+            i = 0
+            for res in l:
+                resultdf.loc[i]=res.get()
+                allresultdf.loc[allnum]=resultdf.loc[i]
+                i+=1
+                allnum+=1
+            resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
+            resultfilename=("%s%d finalresult_dsl%.3f_ownl%.3f.csv"%(symbol,K_MIN,stoplossTarget,winSwitch))
+            resultdf.to_csv(newfolder+'\\'+resultfilename)
 
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')
+    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_ownl.csv')
