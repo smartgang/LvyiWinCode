@@ -7,7 +7,7 @@ import numpy as np
 import time
 import ResultStatistics as RS
 from datetime import datetime
-
+import DATA_CONSTANTS as DC
 
 def  getMonthParameter(startmonth,endmonth,symbol,K_MIN,parasetlist,oprresultpath,targetpath):
     '''
@@ -72,6 +72,8 @@ def  getMonthParameter(startmonth,endmonth,symbol,K_MIN,parasetlist,oprresultpat
     df['Rank4'] = df['SharpeRank'] * 0.6 + df['DrawbackRank'] * 0.4  # 目标集4：夏普*0.6+最大回撤*0.4
     df['Rank5'] = df['AnnualRank'] * 0.4 + df['SharpeRank'] * 0.3 + \
                   df['SuccessRank'] * 0.1 + df['DrawbackRank'] * 0.2  # 目标集5：4目标综合
+    df['Rank6'] = df['SuccessRank']
+    df['Rank7'] = df['SuccessRank'] * 0.5 + df['AnnualRank'] * 0.5
 
     filenamehead = ("%s_%s_%d_%s_parameter" % (targetpath, symbol, K_MIN, endmonth))
     df.to_csv(filenamehead + '.csv')
@@ -80,13 +82,23 @@ def  getMonthParameter(startmonth,endmonth,symbol,K_MIN,parasetlist,oprresultpat
 
 
 if __name__ == '__main__':
-    parasetlist=pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\\ParameterOptSet.csv')
-    rawdatapath='D:\\002 MakeLive\myquant\LvyiWin\Results\DCE I 600\\'
-    symbol='DCE.I'
-    K_MIN=600
+    #参数配置
+    exchange_id = 'DCE'
+    sec_id='I'
+    K_MIN = 600
+    symbol = '.'.join([exchange_id, sec_id])
+
+    #文件路径
+    upperpath=DC.getUpperPath(uppernume=2)
+    resultpath=upperpath+"\\Results\\"
+    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    rawdatapath=resultpath+foldername+'\\'
+
+    parasetlist = pd.read_csv(resultpath+'ParameterOptSet1.csv')
+
     starttime=datetime.now()
     print starttime
-    getMonthParameter('2017-06','2017-12',symbol,K_MIN,parasetlist,rawdatapath,rawdatapath)
+    getMonthParameter('2017-11','2018-02',symbol,K_MIN,parasetlist,rawdatapath,rawdatapath)
     endtime = datetime.now()
     print starttime
     print endtime

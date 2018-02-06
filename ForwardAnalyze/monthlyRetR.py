@@ -24,7 +24,7 @@ def monthyRetR(parasetlist,datapath,symbol,K_MIN):
         prodlist.append(ret_r_prod)
 
     proddf=pd.DataFrame(prodlist)
-    proddf.index.name='Setname'
+    #proddf.index.name='Setname'
     tf="%s%s_%d_monthly_retr.csv" %(datapath,symbol,K_MIN)
     proddf.to_csv(tf)
     return tf

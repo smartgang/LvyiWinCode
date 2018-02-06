@@ -382,8 +382,8 @@ def  getMonthParameter(startmonth,endmonth,ranktarget,windowns,symbol,K_MIN,para
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'SHFE'
-    sec_id='RB'
+    exchange_id = 'DCE'
+    sec_id='I'
     K_MIN = 600
     symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'

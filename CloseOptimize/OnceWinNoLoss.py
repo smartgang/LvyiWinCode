@@ -58,6 +58,89 @@ def getShortNoLossByTick(bardf,openprice,winSwitch,nolossThreshhold):
             return newcloseprice,strtime,utctime,timeindex
     return 0,' ',0,0
 
+#==========================================================================================================
+def getLongNoLossByRealtick(tickdf,openprice,winSwitch,nolossThreshhold):
+    df = pd.DataFrame({'close': tickdf.last_price, 'strtime': tickdf['strtime'], 'utc_time': tickdf['utc_time'],
+                       'timeindex': tickdf['Unnamed: 0']})
+    df['max2here']=df['close'].expanding().max()
+    df['maxEarnRate']=df['max2here']/openprice-1
+    df2=df.loc[df['maxEarnRate']>winSwitch]
+    if df2.shape[0]>0:
+        tempdf=df2.loc[df2['close']<=(openprice+nolossThreshhold)]
+        if tempdf.shape[0]>0:
+            temp=tempdf.iloc[0]
+            newcloseprice = temp['close']
+            strtime = temp['strtime']
+            utctime = temp['utc_time']
+            timeindex = temp['timeindex']
+            return newcloseprice,strtime,utctime,timeindex
+    return 0,' ',0,0
+
+
+def getShortNoLossByRealtick(tickdf,openprice,winSwitch,nolossThreshhold):
+    df = pd.DataFrame({'close': tickdf.last_price, 'strtime': tickdf['strtime'], 'utc_time': tickdf['utc_time'],
+                       'timeindex': tickdf['Unnamed: 0']})
+    df['min2here']=df['close'].expanding().min()
+    df['maxEarnRate']=1-df['min2here']/openprice
+    df2=df.loc[df['maxEarnRate']>winSwitch]
+    if df2.shape[0]>0:
+        tempdf=df2.loc[df2['close']>=(openprice-nolossThreshhold)]
+        if tempdf.shape[0]>0:
+            temp=tempdf.iloc[0]
+            #newcloseprice = openprice-nolossThreshhold
+            newcloseprice = temp['close']
+            strtime = temp['strtime']
+            utctime = temp['utc_time']
+            timeindex = temp['timeindex']
+            return newcloseprice,strtime,utctime,timeindex
+    return 0,' ',0,0
+
+def ownlCalRealTick(symbol,K_MIN,setname,ticksupplier,barxm,winSwitch,nolossThreshhold,slip,tofolder):
+    print 'ownl;', str(winSwitch), ',setname:', setname
+    oprdf = pd.read_csv(symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+    tickstartutc,tickendutc=ticksupplier.getDateUtcRange()
+    #只截取tick时间范围内的opr
+    oprdf = oprdf.loc[(oprdf['openutc'] > tickstartutc) & (oprdf['openutc'] < tickendutc)]
+
+    oprdf['new_closeprice'] = oprdf['closeprice']
+    oprdf['new_closetime'] = oprdf['closetime']
+    oprdf['new_closeindex'] = oprdf['closeindex']
+    oprdf['new_closeutc'] = oprdf['closeutc']
+    #oprnum = oprdf.shape[0]
+    oprindex = oprdf.index.tolist()
+    worknum=0
+    #for i in range(oprnum):
+    for i in oprindex:
+        opr = oprdf.loc[i]
+        startutc = (barxm.loc[barxm['utc_time'] == opr.openutc]).iloc[0].utc_endtime #从开仓的10m线结束后开始
+        endutc = (barxm.loc[barxm['utc_time'] == opr.closeutc]).iloc[0].utc_endtime#一直到平仓的10m线结束
+        oprtype = opr.tradetype
+        openprice = opr.openprice
+        tickdata = ticksupplier.getTickDataByUtc(startutc, endutc)
+        if oprtype == 1:
+            newcloseprice, strtime, utctime, timeindex = getLongNoLossByRealtick(tickdata,openprice,winSwitch,nolossThreshhold)
+            if newcloseprice !=0:
+                oprdf.ix[i, 'new_closeprice'] = newcloseprice
+                oprdf.ix[i, 'new_closetime'] = strtime
+                oprdf.ix[i, 'new_closeindex'] = timeindex
+                oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
+
+        else:
+            newcloseprice, strtime, utctime, timeindex = getShortNoLossByRealtick(tickdata, openprice, winSwitch,nolossThreshhold)
+            if newcloseprice != 0:
+                oprdf.ix[i, 'new_closeprice'] = newcloseprice
+                oprdf.ix[i, 'new_closetime'] = strtime
+                oprdf.ix[i, 'new_closeindex'] = timeindex
+                oprdf.ix[i, 'new_closeutc'] = utctime
+                worknum+=1
+
+    oprdf['new_ret'] = ((oprdf['new_closeprice'] - oprdf['openprice']) * oprdf['tradetype']) - slip
+    oprdf['new_ret_r'] = oprdf['new_ret'] / oprdf['openprice']
+    oprdf['retdelta'] = oprdf['new_ret'] - oprdf['ret']
+    oprdf.to_csv(tofolder + symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_realtick.csv')
+
+#================================================================================================
 def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tofolder):
     print 'ownl;', str(winSwitch), ',setname:', setname
     oprdf = pd.read_csv(symbol + str(K_MIN) + ' ' + setname + ' result.csv')
@@ -143,18 +226,21 @@ def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tof
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'DCE'
-    sec_id='I'
+    exchange_id = 'SHFE'
+    sec_id='RB'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=50
+    topN=5000
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
-    starttime='2016-01-01 00:00:00'
-    endtime='2018-01-01 00:00:00'
+    starttime='2017-09-01'
+    endtime='2017-12-11'
+    tickstarttime='2017-10-01'
+    tickendtime='2017-12-01'
     #优化参数
     stoplossStep=0.001
-    winSwitchList = np.arange(0.003, 0.011, stoplossStep)
+    #winSwitchList = np.arange(0.003, 0.011, stoplossStep)
+    winSwitchList=[0.009]
     nolossThreshhold=3*pricetick
 
     #文件路径
@@ -169,8 +255,8 @@ if __name__ == '__main__':
     totalnum=finalresult.shape[0]
 
     #原始数据处理
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime,endtime=endtime)
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime,endtime=endtime)
+    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
+    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
     #bar1m计算longHigh,longLow,shortHigh,shortLow
     bar1m['longHigh']=bar1m['high']
     bar1m['shortHigh']=bar1m['high']
@@ -181,12 +267,14 @@ if __name__ == '__main__':
     bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
+    tickdatasupplier = DC.TickDataSupplier(symbol, tickstarttime, tickendtime)
+
     os.chdir(oprresultpath)
     allresultdf = pd.DataFrame(columns=['setname', 'winSwitch','worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                                      'old_SR',
                                      'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
-    allnum=0
+    allnum=02
     for winSwitch in winSwitchList:
         resultList = []
         ownlFolderName="OnceWinNoLoss" + str(winSwitch*1000)
@@ -196,6 +284,13 @@ if __name__ == '__main__':
             print "dir already exist!"
         print ("OnceWinNoLoss WinSwitch:%f"%winSwitch)
 
+        #顺序执行
+        for sn in range(0, topN):
+            opr = finalresult.iloc[sn]
+            setname=opr['Setname']
+            ownlCalRealTick(symbol,K_MIN,setname,tickdatasupplier,barxm,winSwitch,nolossThreshhold,slip,ownlFolderName + '\\')
+
+        '''
         pool = multiprocessing.Pool(multiprocessing.cpu_count())
         l = []
 
@@ -217,6 +312,6 @@ if __name__ == '__main__':
             allnum+=1
         resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
         resultdf.to_csv(ownlFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(winSwitch)+'.csv')
-
-    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_ownl_by_tick.csv')
+        '''
+    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    #allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_ownl_by_tick.csv')
