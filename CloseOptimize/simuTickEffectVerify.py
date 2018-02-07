@@ -53,7 +53,7 @@ def verifyOwnlSimuTick(sn,symbol,K_MIN,setname,tickstartutc,tickendutc,tofolder)
     workretdelta=workdslretsum-workdsloriretsum
     dslworknum=ownldf.loc[ownldf['new_closeutc']!=ownldf['closeutc'],'new_ret'].count()
 
-    tickdf=pd.read_csv(tofolder + symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_realtick.csv')
+    tickdf=pd.read_csv(tofolder + symbol + str(K_MIN) + ' ' + setname + ' resultOWNL_by_realtick.csv')
     tickretsum=tickdf['new_ret'].sum()
     tickworkretsum=tickdf.loc[tickdf['new_closeutc']!=tickdf['closeutc'],'new_ret'].sum()
     tickworkoriretsum=tickdf.loc[tickdf['new_closeutc']!=tickdf['closeutc'],'ret'].sum()

@@ -138,7 +138,7 @@ def ownlCalRealTick(symbol,K_MIN,setname,ticksupplier,barxm,winSwitch,nolossThre
     oprdf['new_ret'] = ((oprdf['new_closeprice'] - oprdf['openprice']) * oprdf['tradetype']) - slip
     oprdf['new_ret_r'] = oprdf['new_ret'] / oprdf['openprice']
     oprdf['retdelta'] = oprdf['new_ret'] - oprdf['ret']
-    oprdf.to_csv(tofolder + symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_realtick.csv')
+    oprdf.to_csv(tofolder + symbol + str(K_MIN) + ' ' + setname + ' resultOWNL_by_realtick.csv')
 
 #================================================================================================
 def ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,tofolder):
@@ -274,7 +274,6 @@ if __name__ == '__main__':
                                      'old_SR',
                                      'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
-    allnum=02
     for winSwitch in winSwitchList:
         resultList = []
         ownlFolderName="OnceWinNoLoss" + str(winSwitch*1000)

@@ -214,6 +214,7 @@ bar1m.loc[bar1m['open'] > bar1m['close'],'shortLow'] = bar1m['lowshift1']
 
 bar1m.to_csv('longHighTest.csv')
 '''
+'''
 import time
 print 'timer task test begin'
 i=0
@@ -221,3 +222,21 @@ while 1:
     print 'i:',i
     time.sleep(10)
     i+=1
+'''
+#批量重命名文件
+import os
+import pandas as pd
+filepath='D:\\002 MakeLive\myquant\LvyiWin\Results\SHFE RB 600\OnceWinNoLoss9.0\\'
+# 读取finalresult文件并排序，取前topN个
+finalresult = pd.read_csv('D:\\002 MakeLive\myquant\LvyiWin\Results\SHFE RB 600\SHFE.RB600 finanlresults.csv')
+finalresult = finalresult.sort_values(by='end_cash', ascending=False)
+totalnum = finalresult.shape[0]
+topN=4500
+os.chdir(filepath)
+for sn in range(0, topN):
+    opr = finalresult.iloc[sn]
+    setname = opr['Setname']
+    print setname
+    srcfile='SHFE.RB600 '+setname+' resultDSL_by_realtick.csv'
+    dstfile='SHFE.RB600 '+setname+' resultOWNL_by_realtick.csv'
+    os.rename(srcfile,dstfile)#重命名文件
