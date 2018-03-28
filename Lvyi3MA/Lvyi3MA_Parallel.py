@@ -2,12 +2,19 @@
 '''
 Lvyi3MAWin策略多进程参数优化
 '''
-import Lvyi3MAWin
+from Lvyi3MAWin import Lvyi3MAWin
 import pandas as pd
 import numpy as np
 import os
 import DATA_CONSTANTS as DC
 import multiprocessing
+
+
+def getParallelResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
+    result ,df ,closeopr,results = Lvyi3MAWin(symbolinfo=symbolinfo,rawdata=rawdata, setname=setname,paraset=para,contractswaplist=contractswaplist)
+    result.to_csv(symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+    del result
+    return results
 
 if __name__=='__main__':
     #====================参数和文件夹设置======================================
@@ -16,13 +23,13 @@ if __name__=='__main__':
     exchange_id = 'SHFE'
     sec_id='RB'
     K_MIN = 600
-    symbol = '.'.join([strategyName,exchange_id, sec_id])
+    symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'
     enddate = '2017-12-31'
 
     #文件路径
     upperpath=DC.getUpperPath(2)
-    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
     resultpath=upperpath+"\\Results\\"
     os.chdir(resultpath)
     try:
@@ -55,13 +62,13 @@ if __name__=='__main__':
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_mid = parasetlist.ix[i, 'MA_Mid']
         ma_long = parasetlist.ix[i, 'MA_Long']
-        macdParaSet = {
+        paraSet = {
             'MA_Short': ma_short,
             'MA_Mid': ma_mid,
             'MA_Long': ma_long,
         }
-        #Lvyi3MAWin(symbolInfo,rawdata,parasetlist,swaplist)
-        l.append(pool.apply_async(Lvyi3MAWin,(symbolInfo,rawdata,parasetlist,swaplist)))
+        #l.append(getParallelResult(symbolInfo,K_MIN,setname,rawdata,paraSet,swaplist))
+        l.append(pool.apply_async(getParallelResult,(symbolInfo,K_MIN,setname,rawdata,paraSet,swaplist)))
     pool.close()
     pool.join()
 

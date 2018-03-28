@@ -152,7 +152,7 @@ if __name__=='__main__':
     exchange_id = 'SHFE'
     sec_id='RB'
     K_MIN = 600
-    symbol = '.'.join([strategyName,exchange_id, sec_id])
+    symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'
     enddate = '2017-12-31'
 

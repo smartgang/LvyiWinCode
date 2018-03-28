@@ -34,16 +34,17 @@ def removeContractSwap(resultlist, contractswaplist):
 
 
 def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResult=True):
-
+    print setname
     MA_Short = paraset['MA_Short']
     MA_Mid = paraset['MA_Mid']
     MA_Long = paraset['MA_Long']
 
     beginindex = rawdata.ix[0, 'Unnamed: 0']
 
-    df_MA = MA.MA(rawdata['close'], MA_Short, MA_Mid)
-    df_MA.drop('close', axis=1, inplace=True)
-    df = pd.concat([rawdata, df_MA], axis=1)
+    #df_MA = MA.MA(rawdata['close'], MA_Short, MA_Mid)
+    #df_MA.drop('close', axis=1, inplace=True)
+    #df = pd.concat([rawdata, df_MA], axis=1)
+    df = rawdata
     df['MA_Short'] = MA.calMA(df['close'],MA_Short)
     df['MA_Mid'] = MA.calMA(df['close'],MA_Mid)
     df['MA_Long'] = MA.calMA(df['close'],MA_Long)
@@ -117,7 +118,7 @@ def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResul
     # 去掉跨合约的操作
     result = removeContractSwap(result, contractswaplist)
 
-    initial_cash = 2000
+    initial_cash = 20000
     margin_rate = 0.2
     slip = symbolinfo.getSlip()
     multiplier = symbolinfo.getMultiplier()
@@ -176,7 +177,6 @@ def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResul
             'max_single_loss_rate': max_single_loss_rate
         }
     closeopr = result.loc[:, 'closetime':'tradetype']
-
     return result, df, closeopr, results
 
 
@@ -207,4 +207,4 @@ if __name__ == '__main__':
     setname= "testset"
     result, df, closeopr, results = Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, swaplist)
     print results
-    result.to_csv(symbol + str(K_MIN) + 'result.csv')
+    result.to_csv(symbolinfo.symbol + str(K_MIN) + 'result.csv')
