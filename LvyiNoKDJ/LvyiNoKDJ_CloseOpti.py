@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import numpy as np
 import multiprocessing
+import LvyiNoKDJ_Parameter
 
 def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
     symbol=symbolInfo.symbol
@@ -147,7 +148,14 @@ def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
 
 if __name__=='__main__':
     #参数配置
-    #参数设置
+    strategyName=LvyiNoKDJ_Parameter.strategyName
+    exchange_id = LvyiNoKDJ_Parameter.exchange_id
+    sec_id = LvyiNoKDJ_Parameter.sec_id
+    K_MIN = LvyiNoKDJ_Parameter.K_MIN
+    symbol= LvyiNoKDJ_Parameter.symbol
+    startdate = LvyiNoKDJ_Parameter.startdate
+    enddate = LvyiNoKDJ_Parameter.enddate
+    '''
     strategyName='LvyiNoKDJWin'
     exchange_id = 'SHFE'
     sec_id='RB'
@@ -155,24 +163,24 @@ if __name__=='__main__':
     symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'
     enddate = '2017-12-31'
-
+    '''
     symbolinfo = DC.SymbolInfo(symbol)
     slip = DC.getSlip(symbol)
     pricetick = DC.getPriceTick(symbol)
 
     #计算控制开关
-    calcDsl=True
-    calcOwnl=False
-    calcDslOwnl=False
+    calcDsl = LvyiNoKDJ_Parameter.calcDsl_close
+    calcOwnl = LvyiNoKDJ_Parameter.calcOwnl_close
+    calcDslOwnl = LvyiNoKDJ_Parameter.calcDslOwnl_close
 
     #优化参数
-    dslStep=-0.002
-    stoplossList = np.arange(-0.010, -0.042, dslStep)
+    dslStep = LvyiNoKDJ_Parameter.dslStep_close
+    stoplossList = np.arange(LvyiNoKDJ_Parameter.dslTargetStart_close, LvyiNoKDJ_Parameter.dslTargetEnd_close, dslStep)
     #stoplossList=[-0.022]
-    ownlStep=0.001
-    winSwitchList = np.arange(0.003, 0.011, ownlStep)
+    ownlStep = LvyiNoKDJ_Parameter.ownlStep_close
+    winSwitchList = np.arange(LvyiNoKDJ_Parameter.ownlTargetStart_close,LvyiNoKDJ_Parameter.ownltargetEnd_close, ownlStep)
     #winSwitchList=[0.009]
-    nolossThreshhold = 3 * pricetick
+    nolossThreshhold = LvyiNoKDJ_Parameter.nolossThreshhold_close * pricetick
 
     #文件路径
     upperpath=DC.getUpperPath(2)
@@ -194,7 +202,7 @@ if __name__=='__main__':
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
     os.chdir(oprresultpath)
-    parasetlist=pd.read_csv(resultpath+'ParameterOptSetNoKDJ.csv')
+    parasetlist=pd.read_csv(resultpath+LvyiNoKDJ_Parameter.parasetname)
     paranum=parasetlist.shape[0]
 
     if calcDsl:

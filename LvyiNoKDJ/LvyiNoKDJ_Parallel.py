@@ -2,13 +2,13 @@
 '''
 LvyiNoKdJWin策略多进程参数优化
 '''
-from LvyiNoKDJWin import LvyiNoKDJWin
+from .LvyiNoKDJWin import LvyiNoKDJWin
 import pandas as pd
 import numpy as np
 import os
 import DATA_CONSTANTS as DC
 import multiprocessing
-
+import LvyiNoKDJ_Parameter
 
 def getParallelResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
     result ,df ,closeopr,results = LvyiNoKDJWin(symbolinfo=symbolinfo,rawdata=rawdata, setname=setname,paraset=para,contractswaplist=contractswaplist)
@@ -20,6 +20,14 @@ def getParallelResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
 if __name__=='__main__':
     #====================参数和文件夹设置======================================
     #参数设置
+    strategyName=LvyiNoKDJ_Parameter.strategyName
+    exchange_id = LvyiNoKDJ_Parameter.exchange_id
+    sec_id = LvyiNoKDJ_Parameter.sec_id
+    K_MIN = LvyiNoKDJ_Parameter.K_MIN
+    symbol= LvyiNoKDJ_Parameter.symbol
+    startdate = LvyiNoKDJ_Parameter.startdate
+    enddate = LvyiNoKDJ_Parameter.enddate
+    '''
     strategyName='LvyiNoKDJWin'
     exchange_id = 'SHFE'
     sec_id='RB'
@@ -27,7 +35,7 @@ if __name__=='__main__':
     symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'
     enddate = '2017-12-31'
-
+    '''
     #文件路径
     upperpath=DC.getUpperPath(2)
     foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
@@ -41,7 +49,7 @@ if __name__=='__main__':
 
     # ======================数据准备==============================================
     #取参数集
-    parasetlist=pd.read_csv(resultpath+'ParameterOptSetNoKDJ.csv')
+    parasetlist=pd.read_csv(resultpath+LvyiNoKDJ_Parameter.parasetname)
     paranum=parasetlist.shape[0]
     # 取合约信息
     symbolInfo = DC.SymbolInfo(symbol)

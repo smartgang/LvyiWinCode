@@ -5,59 +5,12 @@ import pandas as pd
 import DATA_CONSTANTS as DC
 import os
 import multiprocessing
+import Lvyi3MA_Parameter
+import numpy as np
 
-if __name__=='__main__':
-    # ======================================参数配置===================================================
-    strategyName='Lvyi3MAWin'
-    exchange_id = 'SHFE'
-    sec_id = 'RB'
-    K_MIN = 600
-    symbol = '.'.join([exchange_id, sec_id])
-    startdate = '2016-01-01'
-    enddate = '2017-12-31'
-    nextmonth = 'Jan-18'
-    # windowsSet=[1,2,3,4,5,6,9,12,15]
-    windowsSet = range(1, 13)  # 白区窗口值
-    #双止损开关和参数设置
-    dsl=True
-    ownl=False
-    dslownl=False
-    dslTarget=-0.022
-    ownlTarget=0.009
-    #=============================================================================================================
-    #newresult = True #！！正常:False，双止损:True
-    if dsl:
-        resultfilesuffix = 'resultDSL_by_tick.csv'  # 前面不带空格,正常:result.csv,dsl:resultDSL_by_tick.csv,ownl:resultOWNL_by_tick.csv
-    elif ownl:
-        resultfilesuffix = 'resultOWNL_by_tick.csv'  # 前面不带空格,正常:result.csv,dsl:resultDSL_by_tick.csv,ownl:resultOWNL_by_tick.csv
-    elif dslownl:
-        resultfilesuffix= 'result_dsl_ownl.csv'
-    else:
-        resultfilesuffix='result.csv'
-    #monthlyretrsuffix = 'monthly_retr_new.csv'  # 前面不带下划线,正常:monthly_retr.csv,双止损:monthly_retr_new.csv
-    colslist = mtf.getColumnsName(dsl or ownl or dslownl)
-
-    # ============================================文件路径========================================================
-    upperpath = DC.getUpperPath(uppernume=2)
-    resultpath = upperpath + "\\Results\\"
-    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
-    #rawdatapath = resultpath + foldername + '\\'
-
-    parasetlist = pd.read_csv(resultpath + 'MACDParameterSet1.csv')
-
-    if dsl:
-        rawdatapath = resultpath + foldername + "\\DynamicStopLoss" + str(dslTarget*1000)+'\\'  # ！！正常:'\\'，双止损：填上'\\+双止损目标文件夹\\'
-    elif ownl:
-        rawdatapath = resultpath + foldername + "\\OnceWinNoLoss" + str(ownlTarget*1000)+'\\'  # ！！正常:'\\'，双止损：填上'\\+双止损目标文件夹\\'
-    elif dslownl:
-        newfolder = ("\\dsl_%.3f_ownl_%.3f\\" % (dslTarget, ownlTarget))
-        rawdatapath = resultpath + foldername + newfolder  # ！！正常:'\\'，双止损：填上'\\+双止损目标文件夹\\'
-    else:
-        rawdatapath = resultpath + foldername+'\\'
-
+def getForward(symbol,K_MIN,parasetlist,rawdatapath,startdate,enddate,nextmonth,windowsSet,colslist,resultfilesuffix):
     forwordresultpath = rawdatapath + '\\ForwardResults\\'
     forwardrankpath = rawdatapath + '\\ForwardRank\\'
-
     monthlist = [datetime.strftime(x, '%b-%y') for x in list(pd.date_range(start=startdate, end=enddate, freq='M'))]
     monthlist.append(nextmonth)
     os.chdir(rawdatapath)
@@ -77,18 +30,90 @@ if __name__=='__main__':
     starttime = datetime.now()
     print starttime
     # 多进程优化，启动一个对应CPU核心数量的进程池
-
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     for whiteWindows in windowsSet:
-        #l.append(mtf.runPara(whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
-        l.append(pool.apply_async(mtf.runPara, (whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist,resultfilesuffix)))
+        # l.append(mtf.runPara(whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
+        l.append(pool.apply_async(mtf.runPara, (
+        whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist,
+        resultfilesuffix)))
     pool.close()
     pool.join()
 
     mtf.calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
-
     mtf.calOprResult(rawdatapath, symbol, K_MIN, nextmonth, columns=colslist, resultfilesuffix=resultfilesuffix)
     endtime = datetime.now()
     print starttime
     print endtime
+
+def getDslForward(dslset,symbol, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet):
+    print ('DSL forward start!')
+    colslist = mtf.getColumnsName(True)
+    resultfilesuffix = 'resultDSL_by_tick.csv'
+    for dslTarget in dslset:
+        rawdatapath = folderpath + "DynamicStopLoss" + str(dslTarget * 1000) + '\\'
+        getForward(symbol, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist,resultfilesuffix)
+    print ('DSL forward finished!')
+
+def getownlForward(ownlset,symbol, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet):
+    print ('OWNL forward start!')
+    colslist = mtf.getColumnsName(True)
+    resultfilesuffix = 'resultOWNL_by_tick.csv'
+    for ownlTarget in ownlset:
+        rawdatapath = folderpath + "OnceWinNoLoss" + str(ownlTarget*1000) + '\\'
+        getForward(symbol, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist,resultfilesuffix)
+    print ('OWNL forward finished!')
+
+def getdsl_ownlForward(dsl_ownl_list,symbol, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet):
+    print ('DSL_OWNL forward start!')
+    colslist = mtf.getColumnsName(True)
+    resultfilesuffix = 'result_dsl_ownl.csv'
+    for dsl_ownl in dsl_ownl_list:
+        newfolder = ("dsl_%.3f_ownl_%.3f\\" % (dsl_ownl[0], dsl_ownl[1]))
+        rawdatapath = folderpath + newfolder  # ！！正常:'\\'，双止损：填上'\\+双止损目标文件夹\\'
+        getForward(symbol, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, resultfilesuffix)
+    print ('DSL_OWNL forward finished!')
+
+if __name__=='__main__':
+    # ======================================参数配置===================================================
+    strategyName=Lvyi3MA_Parameter.strategyName
+    exchange_id = Lvyi3MA_Parameter.exchange_id
+    sec_id = Lvyi3MA_Parameter.sec_id
+    K_MIN = Lvyi3MA_Parameter.K_MIN
+    symbol= Lvyi3MA_Parameter.symbol
+    startdate = Lvyi3MA_Parameter.startdate
+    enddate = Lvyi3MA_Parameter.enddate
+    nextmonth = Lvyi3MA_Parameter.nextMonthName
+    # windowsSet=[1,2,3,4,5,6,9,12,15]
+    windowsSet = range(Lvyi3MA_Parameter.forwardWinStart, Lvyi3MA_Parameter.forwardWinEnd+1)  # 白区窗口值
+    commonForward=Lvyi3MA_Parameter.common_forward
+    #双止损开关和参数设置
+    dslStep=Lvyi3MA_Parameter.dslStep_forward
+    dsl=Lvyi3MA_Parameter.calcDsl_forward
+    ownlStep=Lvyi3MA_Parameter.ownlStep_forward
+    ownl=Lvyi3MA_Parameter.calcOwnl_forward
+    dslownl=Lvyi3MA_Parameter.calcDslOwnl_forward
+
+    dslTargetList=np.arange(Lvyi3MA_Parameter.dslTargetStart_close, Lvyi3MA_Parameter.dslTargetEnd_close, dslStep)
+    ownlTargetlist=np.arange(Lvyi3MA_Parameter.ownlTargetStart_close,Lvyi3MA_Parameter.ownltargetEnd_close, ownlStep)
+    dsl_ownl_List=Lvyi3MA_Parameter.dsl_ownl_set
+
+    # ============================================文件路径========================================================
+    upperpath = DC.getUpperPath(uppernume=2)
+    resultpath = upperpath + "\\Results\\"
+    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
+    folderpath = resultpath + foldername + '\\'
+
+    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+
+    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+    if commonForward:
+        colslist = mtf.getColumnsName(False)
+        resultfilesuffix = 'result.csv'
+        getForward(symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet,colslist,resultfilesuffix)
+    if dsl:
+        getDslForward(dslTargetList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
+    if ownl:
+        getownlForward(ownlTargetlist,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
+    if dslownl:
+        getdsl_ownlForward(dsl_ownl_List,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)

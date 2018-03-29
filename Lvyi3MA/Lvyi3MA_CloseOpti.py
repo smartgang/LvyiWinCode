@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import numpy as np
 import multiprocessing
+import Lvyi3MA_Parameter
 
 def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
     symbol=symbolInfo.symbol
@@ -147,32 +148,31 @@ def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
 
 if __name__=='__main__':
     #参数配置
-    #参数设置
-    strategyName='Lvyi3MAWin'
-    exchange_id = 'SHFE'
-    sec_id='RB'
-    K_MIN = 600
-    symbol = '.'.join([exchange_id, sec_id])
-    startdate='2016-01-01'
-    enddate = '2017-12-31'
+    strategyName=Lvyi3MA_Parameter.strategyName
+    exchange_id = Lvyi3MA_Parameter.exchange_id
+    sec_id = Lvyi3MA_Parameter.sec_id
+    K_MIN = Lvyi3MA_Parameter.K_MIN
+    symbol= Lvyi3MA_Parameter.symbol
+    startdate = Lvyi3MA_Parameter.startdate
+    enddate = Lvyi3MA_Parameter.enddate
 
     symbolinfo = DC.SymbolInfo(symbol)
     slip = DC.getSlip(symbol)
     pricetick = DC.getPriceTick(symbol)
 
     #计算控制开关
-    calcDsl=True
-    calcOwnl=True
-    calcDslOwnl=True
+    calcDsl=Lvyi3MA_Parameter.calcDsl_close
+    calcOwnl=Lvyi3MA_Parameter.calcOwnl_close
+    calcDslOwnl=Lvyi3MA_Parameter.calcDslOwnl_close
 
     #优化参数
-    dslStep=-0.002
-    stoplossList = np.arange(-0.010, -0.042, dslStep)
+    dslStep = Lvyi3MA_Parameter.dslStep_close
+    stoplossList = np.arange(Lvyi3MA_Parameter.dslTargetStart_close, Lvyi3MA_Parameter.dslTargetEnd_close, dslStep)
     #stoplossList=[-0.022]
-    ownlStep=0.001
-    winSwitchList = np.arange(0.003, 0.011, ownlStep)
+    ownlStep=Lvyi3MA_Parameter.ownlStep_close
+    winSwitchList = np.arange(Lvyi3MA_Parameter.ownlTargetStart_close, Lvyi3MA_Parameter.ownltargetEnd_close, ownlStep)
     #winSwitchList=[0.009]
-    nolossThreshhold = 3 * pricetick
+    nolossThreshhold = Lvyi3MA_Parameter.nolossThreshhold_close * pricetick
 
     #文件路径
     upperpath=DC.getUpperPath(2)
@@ -194,7 +194,7 @@ if __name__=='__main__':
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
     os.chdir(oprresultpath)
-    parasetlist=pd.read_csv(resultpath+'ParameterOptSet3MA.csv')
+    parasetlist=pd.read_csv(resultpath+Lvyi3MA_Parameter.parasetname)
     paranum=parasetlist.shape[0]
 
     if calcDsl:

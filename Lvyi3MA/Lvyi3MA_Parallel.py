@@ -8,6 +8,7 @@ import numpy as np
 import os
 import DATA_CONSTANTS as DC
 import multiprocessing
+import Lvyi3MA_Parameter
 
 
 def getParallelResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
@@ -19,13 +20,13 @@ def getParallelResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
 if __name__=='__main__':
     #====================参数和文件夹设置======================================
     #参数设置
-    strategyName='Lvyi3MAWin'
-    exchange_id = 'SHFE'
-    sec_id='RB'
-    K_MIN = 600
-    symbol = '.'.join([exchange_id, sec_id])
-    startdate='2016-01-01'
-    enddate = '2017-12-31'
+    strategyName=Lvyi3MA_Parameter.strategyName
+    exchange_id = Lvyi3MA_Parameter.exchange_id
+    sec_id = Lvyi3MA_Parameter.sec_id
+    K_MIN = Lvyi3MA_Parameter.K_MIN
+    symbol= Lvyi3MA_Parameter.symbol
+    startdate = Lvyi3MA_Parameter.startdate
+    enddate = Lvyi3MA_Parameter.enddate
 
     #文件路径
     upperpath=DC.getUpperPath(2)
@@ -40,7 +41,7 @@ if __name__=='__main__':
 
     # ======================数据准备==============================================
     #取参数集
-    parasetlist=pd.read_csv(resultpath+'ParameterOptSet3MA.csv')
+    parasetlist=pd.read_csv(resultpath+Lvyi3MA_Parameter.parasetname)
     paranum=parasetlist.shape[0]
     # 取合约信息
     symbolInfo = DC.SymbolInfo(symbol)
