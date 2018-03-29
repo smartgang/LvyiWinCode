@@ -24,10 +24,10 @@ if __name__=='__main__':
     exchange_id = Lvyi3MA_Parameter.exchange_id
     sec_id = Lvyi3MA_Parameter.sec_id
     K_MIN = Lvyi3MA_Parameter.K_MIN
-    symbol= Lvyi3MA_Parameter.symbol
     startdate = Lvyi3MA_Parameter.startdate
     enddate = Lvyi3MA_Parameter.enddate
-
+    symbol = '.'.join([exchange_id, sec_id])
+    
     #文件路径
     upperpath=DC.getUpperPath(2)
     foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])

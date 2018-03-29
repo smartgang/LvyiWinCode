@@ -80,7 +80,7 @@ if __name__=='__main__':
     exchange_id = Lvyi3MA_Parameter.exchange_id
     sec_id = Lvyi3MA_Parameter.sec_id
     K_MIN = Lvyi3MA_Parameter.K_MIN
-    symbol= Lvyi3MA_Parameter.symbol
+    symbol= '.'.join([exchange_id, sec_id])
     startdate = Lvyi3MA_Parameter.startdate
     enddate = Lvyi3MA_Parameter.enddate
     nextmonth = Lvyi3MA_Parameter.nextMonthName
