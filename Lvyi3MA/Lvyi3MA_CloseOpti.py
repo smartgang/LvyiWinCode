@@ -181,8 +181,8 @@ if __name__=='__main__':
     oprresultpath=resultpath+foldername
 
     #原始数据处理
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=startdate+' 00:00:00',endtime=enddate+' 00:00:00')
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=startdate+' 00:00:00',endtime=enddate+' 00:00:00')
+    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
+    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
     #bar1m计算longHigh,longLow,shortHigh,shortLow
     bar1m['longHigh']=bar1m['high']
     bar1m['shortHigh']=bar1m['high']

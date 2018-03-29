@@ -9,9 +9,9 @@ import multiprocessing
 if __name__=='__main__':
     # ======================================参数配置===================================================
     strategyName='Lvyi3MAWin'
-    exchange_id = 'DCE'
-    sec_id = 'I'
-    K_MIN = 900
+    exchange_id = 'SHFE'
+    sec_id = 'RB'
+    K_MIN = 600
     symbol = '.'.join([exchange_id, sec_id])
     startdate = '2016-01-01'
     enddate = '2017-12-31'
@@ -34,7 +34,7 @@ if __name__=='__main__':
         resultfilesuffix= 'result_dsl_ownl.csv'
     else:
         resultfilesuffix='result.csv'
-    monthlyretrsuffix = 'monthly_retr_new.csv'  # 前面不带下划线,正常:monthly_retr.csv,双止损:monthly_retr_new.csv
+    #monthlyretrsuffix = 'monthly_retr_new.csv'  # 前面不带下划线,正常:monthly_retr.csv,双止损:monthly_retr_new.csv
     colslist = mtf.getColumnsName(dsl or ownl or dslownl)
 
     # ============================================文件路径========================================================
@@ -86,7 +86,7 @@ if __name__=='__main__':
     pool.close()
     pool.join()
 
-    mtf.calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath, monthlyfilesuffix=monthlyretrsuffix)
+    mtf.calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
 
     mtf.calOprResult(rawdatapath, symbol, K_MIN, nextmonth, columns=colslist, resultfilesuffix=resultfilesuffix)
     endtime = datetime.now()

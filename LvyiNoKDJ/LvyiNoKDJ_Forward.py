@@ -22,7 +22,7 @@ if __name__=='__main__':
     dsl=True
     ownl=False
     dslownl=False
-    dslTarget=-0.022
+    dslTarget=-0.018
     ownlTarget=0.009
     #=============================================================================================================
     #newresult = True #！！正常:False，双止损:True
@@ -34,7 +34,7 @@ if __name__=='__main__':
         resultfilesuffix= 'result_dsl_ownl.csv'
     else:
         resultfilesuffix='result.csv'
-    monthlyretrsuffix = 'monthly_retr_new.csv'  # 前面不带下划线,正常:monthly_retr.csv,双止损:monthly_retr_new.csv
+    #monthlyretrsuffix = 'monthly_retr_new.csv'  # 前面不带下划线,正常:monthly_retr.csv,双止损:monthly_retr_new.csv
     colslist = mtf.getColumnsName(dsl or ownl or dslownl)
 
     # ============================================文件路径========================================================
@@ -77,7 +77,7 @@ if __name__=='__main__':
     starttime = datetime.now()
     print starttime
     # 多进程优化，启动一个对应CPU核心数量的进程池
-
+    '''
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     for whiteWindows in windowsSet:
@@ -85,8 +85,8 @@ if __name__=='__main__':
         l.append(pool.apply_async(mtf.runPara, (whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist,resultfilesuffix)))
     pool.close()
     pool.join()
-
-    mtf.calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath, monthlyfilesuffix=monthlyretrsuffix)
+    '''
+    mtf.calGrayResult(symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
 
     mtf.calOprResult(rawdatapath, symbol, K_MIN, nextmonth, columns=colslist, resultfilesuffix=resultfilesuffix)
     endtime = datetime.now()
