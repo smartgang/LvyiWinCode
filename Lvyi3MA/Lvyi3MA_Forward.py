@@ -82,12 +82,10 @@ if __name__=='__main__':
     # 取参数集
     parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
     paranum = parasetlist.shape[0]
-
+    windowsSet = range(Lvyi3MA_Parameter.forwardWinStart, Lvyi3MA_Parameter.forwardWinEnd + 1)  # 白区窗口值
     # ======================================参数配置===================================================
-
-    # 参数设置
     strategyParameterSet = []
-    if not Lvyi3MA_Parameter.symbol_KMIN_opt_swtich:
+    if not Lvyi3MA_Parameter.forward_set_filename:
         # 单品种单周期模式
         paradic = {
             'strategyName': Lvyi3MA_Parameter.strategyName,
@@ -96,14 +94,19 @@ if __name__=='__main__':
             'K_MIN': Lvyi3MA_Parameter.K_MIN,
             'startdate': Lvyi3MA_Parameter.startdate,
             'enddate': Lvyi3MA_Parameter.enddate,
+            'nextmonth':Lvyi3MA_Parameter.nextMonthName,
             'symbol': '.'.join([Lvyi3MA_Parameter.exchange_id, Lvyi3MA_Parameter.sec_id]),
-            'calcDsl': Lvyi3MA_Parameter.calcDsl_close,
-            'calcOwnl': Lvyi3MA_Parameter.calcOwnl_close,
-            'calcDslOwnl': Lvyi3MA_Parameter.calcDslOwnl_close,
-            'dslStep':Lvyi3MA_Parameter.dslStep_close,
-            'dslTargetStart':Lvyi3MA_Parameter.dslTargetStart_close,
-            'dslTargetEnd':Lvyi3MA_Parameter.dslTargetEnd_close,
-            'ownlStep' : Lvyi3MA_Parameter.ownlStep_close,
+            'commonForwadrd': Lvyi3MA_Parameter.common_forward,
+            'calcDsl': Lvyi3MA_Parameter.calcDsl_forward,
+            'calcOwnl': Lvyi3MA_Parameter.calcOwnl_forward,
+            'calcDslOwnl': Lvyi3MA_Parameter.calcDslOwnl_forward,
+            'dslStep':Lvyi3MA_Parameter.dslStep_forward,
+            'dslTargetStart':Lvyi3MA_Parameter.dslTargetStart_forward,
+            'dslTargetEnd':Lvyi3MA_Parameter.dslTargetEnd_forward,
+            'ownlStep' : Lvyi3MA_Parameter.ownlStep_forward,
+            'ownlTargetStart': Lvyi3MA_Parameter.ownlTargetStart_forward,
+            'ownltargetEnd': Lvyi3MA_Parameter.ownltargetEnd_forward,
+            'dsl_own_set': Lvyi3MA_Parameter.dsl_ownl_set
         }
         strategyParameterSet.append(paradic)
     else:
@@ -120,7 +123,9 @@ if __name__=='__main__':
                 'K_MIN': symbolset.ix[i, 'K_MIN'],
                 'startdate': symbolset.ix[i, 'startdate'],
                 'enddate': symbolset.ix[i, 'enddate'],
+                'nextmonth':symbolset.ix[i,'nextmonth'],
                 'symbol': '.'.join([exchangeid, secid]),
+                'commonForward':symbolset.ix[i,'commonForward'],
                 'calcDsl': symbolset.ix[i, 'calcDsl'],
                 'calcOwnl': symbolset.ix[i, 'calcOwnl'],
                 'calcDslOwnl': symbolset.ix[i, 'calcDslOwnl'],
@@ -130,49 +135,56 @@ if __name__=='__main__':
                 'ownlStep': symbolset.ix[i, 'ownlStep'],
                 'ownlTargetStart': symbolset.ix[i, 'ownlTargetStart'],
                 'ownltargetEnd': symbolset.ix[i, 'ownltargetEnd'],
-                'nolossThreshhold': symbolset.ix[i, 'nolossThreshhold']
+                'dslownl_dsl': symbolset.ix[i, 'dslownl_dsl'],
+                'dslownl_ownl':symbolset.ix[i,'dslownl_ownl']
             }
             )
 
+    for strategyParameter in strategyParameterSet:
 
-    strategyName=Lvyi3MA_Parameter.strategyName
-    exchange_id = Lvyi3MA_Parameter.exchange_id
-    sec_id = Lvyi3MA_Parameter.sec_id
-    K_MIN = Lvyi3MA_Parameter.K_MIN
-    symbol= '.'.join([exchange_id, sec_id])
-    startdate = Lvyi3MA_Parameter.startdate
-    enddate = Lvyi3MA_Parameter.enddate
-    nextmonth = Lvyi3MA_Parameter.nextMonthName
-    # windowsSet=[1,2,3,4,5,6,9,12,15]
-    windowsSet = range(Lvyi3MA_Parameter.forwardWinStart, Lvyi3MA_Parameter.forwardWinEnd+1)  # 白区窗口值
-    commonForward=Lvyi3MA_Parameter.common_forward
-    #双止损开关和参数设置
-    dslStep=Lvyi3MA_Parameter.dslStep_forward
-    dsl=Lvyi3MA_Parameter.calcDsl_forward
-    ownlStep=Lvyi3MA_Parameter.ownlStep_forward
-    ownl=Lvyi3MA_Parameter.calcOwnl_forward
-    dslownl=Lvyi3MA_Parameter.calcDslOwnl_forward
+        strategyName = strategyParameter['strategyName']
+        exchange_id = strategyParameter['exchange_id']
+        sec_id = strategyParameter['sec_id']
+        K_MIN = strategyParameter['K_MIN']
+        startdate = strategyParameter['startdate']
+        enddate = strategyParameter['enddate']
+        nextmonth = strategyParameter['nextmonth']
+        symbol = '.'.join([exchange_id, sec_id])
 
-    dslTargetList=np.arange(Lvyi3MA_Parameter.dslTargetStart_close, Lvyi3MA_Parameter.dslTargetEnd_close, dslStep)
-    ownlTargetlist=np.arange(Lvyi3MA_Parameter.ownlTargetStart_close,Lvyi3MA_Parameter.ownltargetEnd_close, ownlStep)
-    dsl_ownl_List=Lvyi3MA_Parameter.dsl_ownl_set
+        symbolinfo = DC.SymbolInfo(symbol)
+        slip = DC.getSlip(symbol)
+        pricetick = DC.getPriceTick(symbol)
 
-    # ============================================文件路径========================================================
-    upperpath = DC.getUpperPath(uppernume=2)
-    resultpath = upperpath + "\\Results\\"
-    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
-    folderpath = resultpath + foldername + '\\'
+        #计算控制开关
+        commonForward = strategyParameter['commonForward']
+        dsl=strategyParameter['calcDsl']
+        ownl=strategyParameter['calcOwnl']
+        dslownl=strategyParameter['calcDslOwnl']
 
-    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+        #优化参数
+        dslStep = strategyParameter['dslStep']
+        stoplossList = np.arange(strategyParameter['dslTargetStart'], strategyParameter['dslTargetEnd'], dslStep)
+        ownlStep=strategyParameter['ownlStep']
+        winSwitchList = np.arange(strategyParameter['ownlTargetStart'], strategyParameter['ownltargetEnd'], ownlStep)
 
-    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
-    if commonForward:
-        colslist = mtf.getColumnsName(False)
-        resultfilesuffix = 'result.csv'
-        getForward(symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet,colslist,resultfilesuffix)
-    if dsl:
-        getDslForward(dslTargetList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
-    if ownl:
-        getownlForward(ownlTargetlist,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
-    if dslownl:
-        getdsl_ownlForward(dsl_ownl_List,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
+        #文件路径
+        foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
+        folderpath=resultpath+foldername
+        os.chdir(folderpath)
+
+        parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+
+        if commonForward:
+            colslist = mtf.getColumnsName(False)
+            resultfilesuffix = 'result.csv'
+            getForward(symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet,colslist,resultfilesuffix)
+        if dsl:
+            getDslForward(stoplossList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
+        if ownl:
+            getownlForward(winSwitchList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
+        if dslownl:
+            if not Lvyi3MA_Parameter.symbol_KMIN_opt_swtich:
+                dsl_ownl_List=strategyParameter['dsl_own_set']
+            else:
+                dsl_ownl_List = [[strategyParameter['dslownl_dsl'],strategyParameter['dslownl_ownl']]]
+            getdsl_ownlForward(dsl_ownl_List,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
