@@ -75,7 +75,66 @@ def getdsl_ownlForward(dsl_ownl_list,symbol, K_MIN, parasetlist, folderpath, sta
     print ('DSL_OWNL forward finished!')
 
 if __name__=='__main__':
+    # 文件路径
+    upperpath = DC.getUpperPath(Lvyi3MA_Parameter.folderLevel)
+    resultpath = upperpath + Lvyi3MA_Parameter.resultFolderName
+
+    # 取参数集
+    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+    paranum = parasetlist.shape[0]
+
     # ======================================参数配置===================================================
+
+    # 参数设置
+    strategyParameterSet = []
+    if not Lvyi3MA_Parameter.symbol_KMIN_opt_swtich:
+        # 单品种单周期模式
+        paradic = {
+            'strategyName': Lvyi3MA_Parameter.strategyName,
+            'exchange_id': Lvyi3MA_Parameter.exchange_id,
+            'sec_id': Lvyi3MA_Parameter.sec_id,
+            'K_MIN': Lvyi3MA_Parameter.K_MIN,
+            'startdate': Lvyi3MA_Parameter.startdate,
+            'enddate': Lvyi3MA_Parameter.enddate,
+            'symbol': '.'.join([Lvyi3MA_Parameter.exchange_id, Lvyi3MA_Parameter.sec_id]),
+            'calcDsl': Lvyi3MA_Parameter.calcDsl_close,
+            'calcOwnl': Lvyi3MA_Parameter.calcOwnl_close,
+            'calcDslOwnl': Lvyi3MA_Parameter.calcDslOwnl_close,
+            'dslStep':Lvyi3MA_Parameter.dslStep_close,
+            'dslTargetStart':Lvyi3MA_Parameter.dslTargetStart_close,
+            'dslTargetEnd':Lvyi3MA_Parameter.dslTargetEnd_close,
+            'ownlStep' : Lvyi3MA_Parameter.ownlStep_close,
+        }
+        strategyParameterSet.append(paradic)
+    else:
+        # 多品种多周期模式
+        symbolset = pd.read_excel(resultpath + Lvyi3MA_Parameter.stoploss_set_filename,index_col='No')
+        symbolsetNum = symbolset.shape[0]
+        for i in range(symbolsetNum):
+            exchangeid = symbolset.ix[i, 'exchange_id']
+            secid = symbolset.ix[i, 'sec_id']
+            strategyParameterSet.append({
+                'strategyName': symbolset.ix[i, 'strategyName'],
+                'exchange_id': exchangeid,
+                'sec_id': secid,
+                'K_MIN': symbolset.ix[i, 'K_MIN'],
+                'startdate': symbolset.ix[i, 'startdate'],
+                'enddate': symbolset.ix[i, 'enddate'],
+                'symbol': '.'.join([exchangeid, secid]),
+                'calcDsl': symbolset.ix[i, 'calcDsl'],
+                'calcOwnl': symbolset.ix[i, 'calcOwnl'],
+                'calcDslOwnl': symbolset.ix[i, 'calcDslOwnl'],
+                'dslStep': symbolset.ix[i, 'dslStep'],
+                'dslTargetStart': symbolset.ix[i, 'dslTargetStart'],
+                'dslTargetEnd': symbolset.ix[i, 'dslTargetEnd'],
+                'ownlStep': symbolset.ix[i, 'ownlStep'],
+                'ownlTargetStart': symbolset.ix[i, 'ownlTargetStart'],
+                'ownltargetEnd': symbolset.ix[i, 'ownltargetEnd'],
+                'nolossThreshhold': symbolset.ix[i, 'nolossThreshhold']
+            }
+            )
+
+
     strategyName=Lvyi3MA_Parameter.strategyName
     exchange_id = Lvyi3MA_Parameter.exchange_id
     sec_id = Lvyi3MA_Parameter.sec_id
