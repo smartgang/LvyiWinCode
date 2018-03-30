@@ -71,10 +71,10 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
     for res in l:
         resultlist.loc[i] = res.get()
         i += 1
-    print resultlist
+    #print resultlist
     finalresults = ("%s %d finalresults.csv" % (symbol, K_MIN))
     resultlist.to_csv(finalresults)
-
+    return resultlist
 if __name__=='__main__':
     #====================参数和文件夹设置======================================
     #文件路径
@@ -116,5 +116,17 @@ if __name__=='__main__':
             }
             )
 
+    allsymbolresult = pd.DataFrame(columns=
+                              ['Setname', 'MA_Short', 'MA_Mid', 'MA_Long', 'opentimes', 'end_cash', 'SR', 'Annual',
+                               'Sharpe', 'DrawBack','max_single_loss_rate',
+                               'strategyName','exchange_id','sec_id','K_MIN'])
     for strategyParameter in strategyParameterSet:
-        getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
+        r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
+        r['strategyName']=strategyParameter['strategyName']
+        r['exhange_id']=strategyParameter['exchange_id']
+        r['sec_id'] = strategyParameter['sec_id']
+        r['K_MIN'] = strategyParameter['K_MIN']
+        allsymbolresult=pd.concat([allsymbolresult,r])
+    allsymbolresult.reset_index(drop=False,inplace=True)
+    os.chdir(resultpath)
+    allsymbolresult.to_csv(Lvyi3MA_Parameter.strategyName+"_symbol_KMIN_results.csv")
