@@ -85,7 +85,7 @@ if __name__=='__main__':
     windowsSet = range(LvyiWin_Parameter.forwardWinStart, LvyiWin_Parameter.forwardWinEnd + 1)  # 白区窗口值
     # ======================================参数配置===================================================
     strategyParameterSet = []
-    if not LvyiWin_Parameter.forward_set_filename:
+    if not LvyiWin_Parameter.symbol_KMIN_opt_swtich:
         # 单品种单周期模式
         paradic = {
             'strategyName': LvyiWin_Parameter.strategyName,
@@ -111,7 +111,7 @@ if __name__=='__main__':
         strategyParameterSet.append(paradic)
     else:
         # 多品种多周期模式
-        symbolset = pd.read_excel(resultpath + LvyiWin_Parameter.stoploss_set_filename,index_col='No')
+        symbolset = pd.read_excel(resultpath + LvyiWin_Parameter.forward_set_filename,index_col='No')
         symbolsetNum = symbolset.shape[0]
         for i in range(symbolsetNum):
             exchangeid = symbolset.ix[i, 'exchange_id']

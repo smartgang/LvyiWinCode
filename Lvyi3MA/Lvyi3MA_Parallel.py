@@ -123,7 +123,7 @@ if __name__=='__main__':
     for strategyParameter in strategyParameterSet:
         r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
         r['strategyName']=strategyParameter['strategyName']
-        r['exhange_id']=strategyParameter['exchange_id']
+        r['exchange_id']=strategyParameter['exchange_id']
         r['sec_id'] = strategyParameter['sec_id']
         r['K_MIN'] = strategyParameter['K_MIN']
         allsymbolresult=pd.concat([allsymbolresult,r])
