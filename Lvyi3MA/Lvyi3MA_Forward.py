@@ -161,12 +161,6 @@ if __name__=='__main__':
         ownl=strategyParameter['calcOwnl']
         dslownl=strategyParameter['calcDslOwnl']
 
-        #优化参数
-        dslStep = strategyParameter['dslStep']
-        stoplossList = np.arange(strategyParameter['dslTargetStart'], strategyParameter['dslTargetEnd'], dslStep)
-        ownlStep=strategyParameter['ownlStep']
-        winSwitchList = np.arange(strategyParameter['ownlTargetStart'], strategyParameter['ownltargetEnd'], ownlStep)
-
         #文件路径
         foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
         folderpath=resultpath+foldername
@@ -179,8 +173,13 @@ if __name__=='__main__':
             resultfilesuffix = 'result.csv'
             getForward(symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet,colslist,resultfilesuffix)
         if dsl:
+            dslStep = strategyParameter['dslStep']
+            stoplossList = np.arange(strategyParameter['dslTargetStart'], strategyParameter['dslTargetEnd'], dslStep)
             getDslForward(stoplossList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
         if ownl:
+            ownlStep = strategyParameter['ownlStep']
+            winSwitchList = np.arange(strategyParameter['ownlTargetStart'], strategyParameter['ownltargetEnd'],
+                                      ownlStep)
             getownlForward(winSwitchList,symbol,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet)
         if dslownl:
             if not Lvyi3MA_Parameter.symbol_KMIN_opt_swtich:
