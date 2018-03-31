@@ -95,7 +95,7 @@ if __name__=='__main__':
             'startdate': LvyiNoKDJ_Parameter.startdate,
             'enddate': LvyiNoKDJ_Parameter.enddate,
             'nextmonth':LvyiNoKDJ_Parameter.nextMonthName,
-            'commonForwadrd': LvyiNoKDJ_Parameter.common_forward,
+            'commonForward': LvyiNoKDJ_Parameter.common_forward,
             'calcDsl': LvyiNoKDJ_Parameter.calcDsl_forward,
             'calcOwnl': LvyiNoKDJ_Parameter.calcOwnl_forward,
             'calcDslOwnl': LvyiNoKDJ_Parameter.calcDslOwnl_forward,
