@@ -10,6 +10,17 @@ import numpy as np
 import multiprocessing
 import LvyiNoKDJ_Parameter
 
+def bar1mPrepare(bar1m):
+    bar1m['longHigh'] = bar1m['high']
+    bar1m['shortHigh'] = bar1m['high']
+    bar1m['longLow'] = bar1m['low']
+    bar1m['shortLow'] = bar1m['low']
+    bar1m['highshift1'] = bar1m['high'].shift(1).fillna(0)
+    bar1m['lowshift1'] = bar1m['low'].shift(1).fillna(0)
+    bar1m.loc[bar1m['open'] < bar1m['close'], 'longHigh'] = bar1m['highshift1']
+    bar1m.loc[bar1m['open'] > bar1m['close'], 'shortLow'] = bar1m['lowshift1']
+    return bar1m
+
 def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
     symbol=symbolInfo.symbol
     pricetick=symbolInfo.getPriceTick()
@@ -147,69 +158,110 @@ def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
 
 
 if __name__=='__main__':
-    #参数配置
-    strategyName=LvyiNoKDJ_Parameter.strategyName
-    exchange_id = LvyiNoKDJ_Parameter.exchange_id
-    sec_id = LvyiNoKDJ_Parameter.sec_id
-    K_MIN = LvyiNoKDJ_Parameter.K_MIN
-    symbol= LvyiNoKDJ_Parameter.symbol
-    startdate = LvyiNoKDJ_Parameter.startdate
-    enddate = LvyiNoKDJ_Parameter.enddate
-    '''
-    strategyName='LvyiNoKDJWin'
-    exchange_id = 'SHFE'
-    sec_id='RB'
-    K_MIN = 600
-    symbol = '.'.join([exchange_id, sec_id])
-    startdate='2016-01-01'
-    enddate = '2017-12-31'
-    '''
-    symbolinfo = DC.SymbolInfo(symbol)
-    slip = DC.getSlip(symbol)
-    pricetick = DC.getPriceTick(symbol)
+    # 文件路径
+    upperpath = DC.getUpperPath(LvyiNoKDJ_Parameter.folderLevel)
+    resultpath = upperpath + LvyiNoKDJ_Parameter.resultFolderName
 
-    #计算控制开关
-    calcDsl = LvyiNoKDJ_Parameter.calcDsl_close
-    calcOwnl = LvyiNoKDJ_Parameter.calcOwnl_close
-    calcDslOwnl = LvyiNoKDJ_Parameter.calcDslOwnl_close
+    # 取参数集
+    parasetlist = pd.read_csv(resultpath + LvyiNoKDJ_Parameter.parasetname)
+    paranum = parasetlist.shape[0]
 
-    #优化参数
-    dslStep = LvyiNoKDJ_Parameter.dslStep_close
-    stoplossList = np.arange(LvyiNoKDJ_Parameter.dslTargetStart_close, LvyiNoKDJ_Parameter.dslTargetEnd_close, dslStep)
-    #stoplossList=[-0.022]
-    ownlStep = LvyiNoKDJ_Parameter.ownlStep_close
-    winSwitchList = np.arange(LvyiNoKDJ_Parameter.ownlTargetStart_close,LvyiNoKDJ_Parameter.ownltargetEnd_close, ownlStep)
-    #winSwitchList=[0.009]
-    nolossThreshhold = LvyiNoKDJ_Parameter.nolossThreshhold_close * pricetick
+    # 参数设置
+    strategyParameterSet = []
+    if not LvyiNoKDJ_Parameter.symbol_KMIN_opt_swtich:
+        # 单品种单周期模式
+        paradic = {
+            'strategyName': LvyiNoKDJ_Parameter.strategyName,
+            'exchange_id': LvyiNoKDJ_Parameter.exchange_id,
+            'sec_id': LvyiNoKDJ_Parameter.sec_id,
+            'K_MIN': LvyiNoKDJ_Parameter.K_MIN,
+            'startdate': LvyiNoKDJ_Parameter.startdate,
+            'enddate': LvyiNoKDJ_Parameter.enddate,
+            'symbol': '.'.join([LvyiNoKDJ_Parameter.exchange_id, LvyiNoKDJ_Parameter.sec_id]),
+            'calcDsl': LvyiNoKDJ_Parameter.calcDsl_close,
+            'calcOwnl': LvyiNoKDJ_Parameter.calcOwnl_close,
+            'calcDslOwnl': LvyiNoKDJ_Parameter.calcDslOwnl_close,
+            'dslStep':LvyiNoKDJ_Parameter.dslStep_close,
+            'dslTargetStart':LvyiNoKDJ_Parameter.dslTargetStart_close,
+            'dslTargetEnd':LvyiNoKDJ_Parameter.dslTargetEnd_close,
+            'ownlStep' : LvyiNoKDJ_Parameter.ownlStep_close,
+            'ownlTargetStart': LvyiNoKDJ_Parameter.ownlTargetStart_close,
+            'ownltargetEnd': LvyiNoKDJ_Parameter.ownltargetEnd_close,
+            'nolossThreshhold':LvyiNoKDJ_Parameter.nolossThreshhold_close
+        }
+        strategyParameterSet.append(paradic)
+    else:
+        # 多品种多周期模式
+        symbolset = pd.read_excel(resultpath + LvyiNoKDJ_Parameter.stoploss_set_filename,index_col='No')
+        symbolsetNum = symbolset.shape[0]
+        for i in range(symbolsetNum):
+            exchangeid = symbolset.ix[i, 'exchange_id']
+            secid = symbolset.ix[i, 'sec_id']
+            strategyParameterSet.append({
+                'strategyName': symbolset.ix[i, 'strategyName'],
+                'exchange_id': exchangeid,
+                'sec_id': secid,
+                'K_MIN': symbolset.ix[i, 'K_MIN'],
+                'startdate': symbolset.ix[i, 'startdate'],
+                'enddate': symbolset.ix[i, 'enddate'],
+                'symbol': '.'.join([exchangeid, secid]),
+                'calcDsl': symbolset.ix[i, 'calcDsl'],
+                'calcOwnl': symbolset.ix[i, 'calcOwnl'],
+                'calcDslOwnl': symbolset.ix[i, 'calcDslOwnl'],
+                'dslStep': symbolset.ix[i, 'dslStep'],
+                'dslTargetStart': symbolset.ix[i, 'dslTargetStart'],
+                'dslTargetEnd': symbolset.ix[i, 'dslTargetEnd'],
+                'ownlStep': symbolset.ix[i, 'ownlStep'],
+                'ownlTargetStart': symbolset.ix[i, 'ownlTargetStart'],
+                'ownltargetEnd': symbolset.ix[i, 'ownltargetEnd'],
+                'nolossThreshhold': symbolset.ix[i, 'nolossThreshhold']
+            }
+            )
 
-    #文件路径
-    upperpath=DC.getUpperPath(2)
-    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
-    resultpath = upperpath + "\\Results\\"
-    oprresultpath=resultpath+foldername
+    for strategyParameter in strategyParameterSet:
 
-    #原始数据处理
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
-    #bar1m计算longHigh,longLow,shortHigh,shortLow
-    bar1m['longHigh']=bar1m['high']
-    bar1m['shortHigh']=bar1m['high']
-    bar1m['longLow']=bar1m['low']
-    bar1m['shortLow']=bar1m['low']
-    bar1m['highshift1']=bar1m['high'].shift(1).fillna(0)
-    bar1m['lowshift1']=bar1m['low'].shift(1).fillna(0)
-    bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
-    bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
+        strategyName = strategyParameter['strategyName']
+        exchange_id = strategyParameter['exchange_id']
+        sec_id = strategyParameter['sec_id']
+        K_MIN = strategyParameter['K_MIN']
+        startdate = strategyParameter['startdate']
+        enddate = strategyParameter['enddate']
+        symbol = '.'.join([exchange_id, sec_id])
 
-    os.chdir(oprresultpath)
-    parasetlist=pd.read_csv(resultpath+LvyiNoKDJ_Parameter.parasetname)
-    paranum=parasetlist.shape[0]
+        symbolinfo = DC.SymbolInfo(symbol)
+        slip = DC.getSlip(symbol)
+        pricetick = DC.getPriceTick(symbol)
 
-    if calcDsl:
-        getDSL(symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm)
+        #计算控制开关
+        calcDsl=strategyParameter['calcDsl']
+        calcOwnl=strategyParameter['calcOwnl']
+        calcDslOwnl=strategyParameter['calcDslOwnl']
 
-    if calcOwnl:
-        getOwnl(symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm)
+        #优化参数
+        dslStep = strategyParameter['dslStep']
+        stoplossList = np.arange(strategyParameter['dslTargetStart'], strategyParameter['dslTargetEnd'], dslStep)
+        #stoplossList=[-0.022]
+        ownlStep=strategyParameter['ownlStep']
+        winSwitchList = np.arange(strategyParameter['ownlTargetStart'], strategyParameter['ownltargetEnd'], ownlStep)
+        #winSwitchList=[0.009]
+        nolossThreshhold = strategyParameter['nolossThreshhold'] * pricetick
 
-    if calcDslOwnl:
-        getDslOwnl(symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList)
+        #文件路径
+        foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
+        oprresultpath=resultpath+foldername
+        os.chdir(oprresultpath)
+
+        #原始数据处理
+        bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
+        barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
+        #bar1m计算longHigh,longLow,shortHigh,shortLow
+        bar1m=bar1mPrepare(bar1m)
+
+        if calcDsl:
+            getDSL(symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm)
+
+        if calcOwnl:
+            getOwnl(symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm)
+
+        if calcDslOwnl:
+            getDslOwnl(symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList)
