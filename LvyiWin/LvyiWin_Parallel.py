@@ -2,17 +2,17 @@
 '''
 LvyiNoKdJWin策略多进程参数优化
 '''
-from .LvyiNoKDJWin import LvyiNoKDJWin
+import LvyiWin
 import pandas as pd
 import numpy as np
 import os
 import DATA_CONSTANTS as DC
 import multiprocessing
-import LvyiNoKDJ_Parameter
+import LvyiWin_Parameter
 
 
 def getResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
-    result ,df ,closeopr,results = LvyiNoKDJWin(symbolinfo=symbolinfo,rawdata=rawdata, setname=setname,paraset=para,contractswaplist=contractswaplist)
+    result ,df ,closeopr,results = LvyiWin.LvyiWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,contractswaplist=contractswaplist)
     result.to_csv(symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
     del result
     print results
@@ -31,7 +31,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
     # ======================数据准备==============================================
     # 取合约信息
     symbolInfo = DC.SymbolInfo(symbol)
-
+    slip = symbolInfo.getSlip()
     # 取跨合约数据
     contractswaplist = DC.getContractSwaplist(symbol)
     swaplist = np.array(contractswaplist.swaputc)
@@ -47,26 +47,35 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
     os.chdir(foldername)
 
     # 多进程优化，启动一个对应CPU核心数量的进程池
-    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+    #pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     resultlist = pd.DataFrame(columns=
-                              ['Setname', 'MA_Short', 'MA_Long','DMI_N', 'opentimes', 'end_cash', 'SR', 'Annual','Sharpe','DrawBack',
-                               'max_single_loss_rate'])
+                              ['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N', 'opentimes', 'end_cash',
+                               'SR', 'Annual', 'Sharpe', 'DrawBack', 'max_single_loss_rate'])
     for i in range(0, paranum):
         setname = parasetlist.ix[i, 'Setname']
+        kdj_n = parasetlist.ix[i, 'KDJ_N']
+        dmi_n = parasetlist.ix[i, 'DMI_N']
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_long = parasetlist.ix[i, 'MA_Long']
-        dmi_n = parasetlist.ix[i,'DMI_N']
-        paraSet = {
-            'Setname':setname,
+        paraset = {
+            'KDJ_N': kdj_n,
+            'KDJ_M': 3,
+            'KDJ_HLim': 85,
+            'KDJ_LLim': 15,
+            'DMI_N': dmi_n,
+            'DMI_M': 6,
             'MA_Short': ma_short,
             'MA_Long': ma_long,
-            'DMI_N':dmi_n,
-            'DMI_M':6
+            'initial_cash': 20000,
+            'commission_ratio': 0.00012,
+            'margin_rate': 0.2,
+            'slip': slip
         }
-        l.append(pool.apply_async(getResult, (symbolInfo, K_MIN, setname, rawdata, paraSet, swaplist)))
-    pool.close()
-    pool.join()
+        l.append(getResult(symbolInfo, K_MIN, setname, rawdata, paraset, swaplist))
+        #l.append(pool.apply_async(getResult, (symbolInfo, K_MIN, setname, rawdata, paraset, swaplist)))
+    #pool.close()
+    #pool.join()
 
     # 显示结果
     i = 0
@@ -81,29 +90,29 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
 if __name__=='__main__':
     #====================参数和文件夹设置======================================
     #文件路径
-    upperpath=DC.getUpperPath(LvyiNoKDJ_Parameter.folderLevel)
-    resultpath = upperpath + LvyiNoKDJ_Parameter.resultFolderName
+    upperpath=DC.getUpperPath(LvyiWin_Parameter.folderLevel)
+    resultpath = upperpath + LvyiWin_Parameter.resultFolderName
 
     # 取参数集
-    parasetlist = pd.read_csv(resultpath + LvyiNoKDJ_Parameter.parasetname)
+    parasetlist = pd.read_csv(resultpath + LvyiWin_Parameter.parasetname)
     paranum = parasetlist.shape[0]
     #参数设置
     strategyParameterSet=[]
-    if not LvyiNoKDJ_Parameter.symbol_KMIN_opt_swtich:
+    if not LvyiWin_Parameter.symbol_KMIN_opt_swtich:
         #单品种单周期模式
         paradic={
-        'strategyName':LvyiNoKDJ_Parameter.strategyName,
-        'exchange_id': LvyiNoKDJ_Parameter.exchange_id,
-        'sec_id': LvyiNoKDJ_Parameter.sec_id,
-        'K_MIN': LvyiNoKDJ_Parameter.K_MIN,
-        'startdate': LvyiNoKDJ_Parameter.startdate,
-        'enddate' : LvyiNoKDJ_Parameter.enddate,
-        'symbol' : '.'.join([LvyiNoKDJ_Parameter.exchange_id, LvyiNoKDJ_Parameter.sec_id])
+        'strategyName':LvyiWin_Parameter.strategyName,
+        'exchange_id': LvyiWin_Parameter.exchange_id,
+        'sec_id': LvyiWin_Parameter.sec_id,
+        'K_MIN': LvyiWin_Parameter.K_MIN,
+        'startdate': LvyiWin_Parameter.startdate,
+        'enddate' : LvyiWin_Parameter.enddate,
+        'symbol' : '.'.join([LvyiWin_Parameter.exchange_id, LvyiWin_Parameter.sec_id])
         }
         strategyParameterSet.append(paradic)
     else:
         #多品种多周期模式
-        symbolset = pd.read_excel(resultpath + LvyiNoKDJ_Parameter.symbol_KMIN_set_filename)
+        symbolset = pd.read_excel(resultpath + LvyiWin_Parameter.symbol_KMIN_set_filename)
         symbolsetNum=symbolset.shape[0]
         for i in range(symbolsetNum):
             exchangeid=symbolset.ix[i,'exchange_id']
@@ -120,8 +129,8 @@ if __name__=='__main__':
             )
 
     allsymbolresult = pd.DataFrame(columns=
-                                   ['Setname', 'MA_Short', 'MA_Long', 'DMI_N', 'opentimes', 'end_cash', 'SR', 'Annual',
-                                    'Sharpe', 'DrawBack','max_single_loss_rate',
+                                   ['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N', 'opentimes', 'end_cash',
+                                    'SR', 'Annual', 'Sharpe', 'DrawBack', 'max_single_loss_rate',
                                'strategyName','exchange_id','sec_id','K_MIN'])
     for strategyParameter in strategyParameterSet:
         r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
@@ -132,4 +141,4 @@ if __name__=='__main__':
         allsymbolresult=pd.concat([allsymbolresult,r])
     allsymbolresult.reset_index(drop=False,inplace=True)
     os.chdir(resultpath)
-    allsymbolresult.to_csv(LvyiNoKDJ_Parameter.strategyName+"_symbol_KMIN_results.csv")
+    allsymbolresult.to_csv(LvyiWin_Parameter.strategyName+"_symbol_KMIN_results.csv")
