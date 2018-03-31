@@ -95,7 +95,6 @@ if __name__=='__main__':
         'K_MIN': Lvyi3MA_Parameter.K_MIN,
         'startdate': Lvyi3MA_Parameter.startdate,
         'enddate' : Lvyi3MA_Parameter.enddate,
-        'symbol' : '.'.join([Lvyi3MA_Parameter.exchange_id, Lvyi3MA_Parameter.sec_id])
         }
         strategyParameterSet.append(paradic)
     else:
@@ -112,7 +111,6 @@ if __name__=='__main__':
                 'K_MIN': symbolset.ix[i,'K_MIN'],
                 'startdate': symbolset.ix[i,'startdate'],
                 'enddate': symbolset.ix[i,'enddate'],
-                'symbol': '.'.join([exchangeid, secid])
             }
             )
 
