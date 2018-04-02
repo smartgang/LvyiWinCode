@@ -83,15 +83,16 @@ def  getMonthParameter(startmonth,endmonth,symbol,K_MIN,parasetlist,oprresultpat
 
 if __name__ == '__main__':
     #参数配置
-    exchange_id = 'DCE'
-    sec_id='I'
+    strategyName = 'LvyiWin'
+    exchange_id = 'SHFE'
+    sec_id='RB'
     K_MIN = 600
     symbol = '.'.join([exchange_id, sec_id])
 
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"
-    foldername = ' '.join([exchange_id, sec_id, str(K_MIN)])
+    foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
     rawdatapath=resultpath+foldername+'\\'
 
     parasetlist = pd.read_csv(resultpath+'ParameterOptSet1.csv')
