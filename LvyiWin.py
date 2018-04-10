@@ -25,7 +25,7 @@ import BOLL
 import KDJ
 import DATA_CONSTANTS as DC
 import ConfigParser
-
+import ResultStatistics as RS
 
 def removeContractSwap(resultlist,contractswaplist):
     results=resultlist
@@ -46,6 +46,7 @@ def removeContractSwap(resultlist,contractswaplist):
     return results
 
 def LvyiWin(rawdata,paraset,contractswaplist):
+    setname=paraset['Setname']
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
     KDJ_HLim=paraset['KDJ_HLim']
@@ -215,24 +216,26 @@ def LvyiWin(rawdata,paraset,contractswaplist):
         result.ix[i, 'trade money']=owncash/margin_rate
         result.ix[i, 'retrace rate'] = retrace_rate
 
-    endcash=result.ix[oprtimes-1,'own cash']
-    mincash=result['own cash'].min()
-    maxcash=result['own cash'].max()
-    successrate=(result.loc[result['ret']>0]).shape[0]/float(oprtimes)
-    commission_fee=result['commission_fee'].sum()
-    max_single_loss_rate=abs(result['ret_r'].min())
-    max_retrace_rate=result['retrace rate'].max()
+    endcash = result.ix[oprtimes - 1, 'own cash']
+    Annual = RS.annual_return(result)
+    Sharpe = RS.sharpe_ratio(result)
+    DrawBack = RS.max_drawback(result)[0]
+    SR = RS.success_rate(result)
+    max_single_loss_rate = abs(result['ret_r'].min())
 
-    results={
+    results = {
+        'Setname': setname,
+        'MA_Short':MA_Short,
+        'MA_Long':MA_Long,
+        'KDJ_N':KDJ_N,
+        'DMI_N':DMI_N,
         'opentimes': oprtimes,
-        'successrate':successrate,
-        'initial_cash':initial_cash,
-        'commission_fee':commission_fee,
         'end_cash': endcash,
-        'min_cash':mincash,
-        'max_cash':maxcash,
-        'max_single_loss_rate':max_single_loss_rate,
-        'max_retrace_rate':max_retrace_rate
+        'SR': SR,
+        'Annual': Annual,
+        'Sharpe': Sharpe,
+        'DrawBack': DrawBack,
+        'max_single_loss_rate': max_single_loss_rate
     }
 
     closeopr=result.loc[:,'closetime':'tradetype']

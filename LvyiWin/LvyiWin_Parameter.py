@@ -12,9 +12,9 @@ enddate = '2018-03-31'
 parasetname = 'ParameterOptSet1.csv'
 
 #=============止损控制开关===================
-calcDsl_close=True
-calcOwnl_close=True
-calcDslOwnl_close=True
+calcDsl_close=False
+calcOwnl_close=False
+calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002
 dslTargetStart_close=-0.022
@@ -31,23 +31,23 @@ forwardWinEnd=12
 
 #止损类型开关
 common_forward=False #普通回测结果推进
-calcDsl_forward=False
+calcDsl_forward=True
 calcOwnl_forward=False
-calcDslOwnl_forward=True
+calcDslOwnl_forward=False
 #dsl参数
 dslStep_forward=-0.002
-dslTargetStart_forward=-0.010
-dslTargetEnd_forward = -0.042
+dslTargetStart_forward=-0.022
+dslTargetEnd_forward = -0.024
 #ownl参数
 ownlStep_forward=0.001
-ownlTargetStart_forward = 0.005
+ownlTargetStart_forward = 0.009
 ownltargetEnd_forward = 0.010
 #dsl_ownl set:dsl在前，ownl在后
-dsl_ownl_set=[[-0.022,0.009]]
+dsl_ownl_set=[[-0.022,0.010]]
 
 #===============多品种多周期优化参数=============================
 #多品种多周期优化开关，打开后代码会从下面标识的文件中导入参数
-symbol_KMIN_opt_swtich=False
+symbol_KMIN_opt_swtich=True
 
 #1.品种和周期组合文件
 symbol_KMIN_set_filename=strategyName+'_symbol_KMIN_set.xlsx'

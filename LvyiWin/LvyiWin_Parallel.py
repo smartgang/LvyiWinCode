@@ -12,7 +12,7 @@ import LvyiWin_Parameter
 
 
 def getResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
-    result ,df ,closeopr,results = LvyiWin.LvyiWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,contractswaplist=contractswaplist)
+    result ,df ,closeopr,results = LvyiWin.LvyiWin(rawdata=rawdata, paraset=para,contractswaplist=contractswaplist)
     result.to_csv(symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
     del result
     print results
@@ -47,7 +47,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
     os.chdir(foldername)
 
     # 多进程优化，启动一个对应CPU核心数量的进程池
-    #pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     resultlist = pd.DataFrame(columns=
                               ['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N', 'opentimes', 'end_cash',
@@ -59,6 +59,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_long = parasetlist.ix[i, 'MA_Long']
         paraset = {
+            'Setname':setname,
             'KDJ_N': kdj_n,
             'KDJ_M': 3,
             'KDJ_HLim': 85,
@@ -72,10 +73,10 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
             'margin_rate': 0.2,
             'slip': slip
         }
-        l.append(getResult(symbolInfo, K_MIN, setname, rawdata, paraset, swaplist))
-        #l.append(pool.apply_async(getResult, (symbolInfo, K_MIN, setname, rawdata, paraset, swaplist)))
-    #pool.close()
-    #pool.join()
+        #l.append(getResult(symbolInfo, K_MIN, setname, rawdata, paraset, swaplist))
+        l.append(pool.apply_async(getResult, (symbolInfo, K_MIN, setname, rawdata, paraset, swaplist)))
+    pool.close()
+    pool.join()
 
     # 显示结果
     i = 0
