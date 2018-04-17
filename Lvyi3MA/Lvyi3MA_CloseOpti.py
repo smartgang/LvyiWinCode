@@ -28,6 +28,8 @@ def bar1mPrepare(bar1m):
     bar['strtime']=bar1m['strtime']
     bar['utc_time']=bar1m['utc_time']
     bar['Unnamed: 0']=bar1m['Unnamed: 0']
+    bar['high']=bar1m['high']
+    bar['low']=bar1m['low']
     return bar
 
 def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
