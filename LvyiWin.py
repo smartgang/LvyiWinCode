@@ -26,7 +26,6 @@ import DATA_CONSTANTS as DC
 import ConfigParser
 import ResultStatistics as RS
 
-
 def removeContractSwap(resultlist,contractswaplist):
     results=resultlist
     resultnum=results.shape[0]
@@ -46,6 +45,7 @@ def removeContractSwap(resultlist,contractswaplist):
     return results
 
 def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
+    setname=paraset['Setname']
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
     KDJ_HLim=paraset['KDJ_HLim']
@@ -228,6 +228,7 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
         max_single_loss_rate = abs(result['ret_r'].min())
 
         results = {
+            'Setname': setname,
             'opentimes': oprtimes,
             'end_cash': endcash,
             'SR': SR,

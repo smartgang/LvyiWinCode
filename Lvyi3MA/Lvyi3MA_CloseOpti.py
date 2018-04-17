@@ -257,7 +257,7 @@ if __name__=='__main__':
 
         #文件路径
         foldername = ' '.join([strategyName,exchange_id, sec_id, str(K_MIN)])
-        oprresultpath=resultpath+foldername
+        oprresultpath=resultpath+foldername+'\\'
         os.chdir(oprresultpath)
 
         #原始数据处理

@@ -12,7 +12,7 @@ import LvyiWin_Parameter
 
 
 def getResult(symbolinfo,K_MIN,setname,rawdata,para,contractswaplist):
-    result ,df ,closeopr,results = LvyiWin.LvyiWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,contractswaplist=contractswaplist)
+    result ,df ,closeopr,results = LvyiWin.LvyiWin(rawdata=rawdata, paraset=para,contractswaplist=contractswaplist)
     result.to_csv(symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
     del result
     print results
@@ -59,6 +59,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_long = parasetlist.ix[i, 'MA_Long']
         paraset = {
+            'Setname':setname,
             'KDJ_N': kdj_n,
             'KDJ_M': 3,
             'KDJ_HLim': 85,
