@@ -241,7 +241,7 @@ def calOprResult(rawpath,symbol,K_MIN):
     '''
     graydf=pd.read_csv(rawpath+'ForwardOprAnalyze\\'+symbol+str(K_MIN)+'multiTargetForwardSetname.csv',index_col='Group')
     cols = graydf.columns.tolist()[3:]
-    cols.append('Feb-18')
+    cols.append('Mar-18')
     groupResult = []
     for i in range(graydf.shape[0]):
         gray=graydf.iloc[i]
@@ -387,7 +387,7 @@ if __name__ == '__main__':
     K_MIN = 600
     symbol = '.'.join([exchange_id, sec_id])
     startdate='2016-01-01'
-    enddate = '2018-02-01'
+    enddate = '2018-03-01'
     #windowsSet=[1,2,3,4,5,6,9,12,15]
     windowsSet=range(1,13)#白区窗口值
 

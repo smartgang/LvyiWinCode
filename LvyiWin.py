@@ -21,10 +21,10 @@ import pandas as pd
 import numpy as np
 import MA
 import DMI
-import BOLL
 import KDJ
 import DATA_CONSTANTS as DC
 import ConfigParser
+import ResultStatistics as RS
 
 
 def removeContractSwap(resultlist,contractswaplist):
@@ -45,7 +45,7 @@ def removeContractSwap(resultlist,contractswaplist):
     results = results.reset_index(drop=True)
     return results
 
-def LvyiWin(rawdata,paraset,contractswaplist):
+def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
     KDJ_HLim=paraset['KDJ_HLim']
@@ -183,58 +183,59 @@ def LvyiWin(rawdata,paraset,contractswaplist):
     #去掉跨合约的操作
     result=removeContractSwap(result,contractswaplist)
 
+    slip = symbolinfo.getSlip()
+    multiplier = symbolinfo.getMultiplier()
+    poundgeType, poundgeFee, poundgeRate = symbolinfo.getPoundage()
+
     firsttradecash = initial_cash / margin_rate
     #2017-12-08:加入滑点
     result['ret']=((result['closeprice']-result['openprice'])*result['tradetype'])-slip
-    #result['ret_r']=result['ret']/result['closeprice']
     result['ret_r'] = result['ret'] / result['openprice']
-    result['commission_fee']=firsttradecash*commission_ratio*2
-    result['funcuve']=firsttradecash
-    result['per earn'] = 0 #单笔盈亏
-    result['own cash'] = 0 #自有资金线
-    result['trade money'] = 0 #杠杆后的可交易资金线
-    result['retrace rate'] = 0  # 回撤率
+    results = {}
+    if calcResult:
+        firsttradecash = initial_cash / margin_rate
+        result['commission_fee'] = 0
+        if poundgeType == symbolinfo.POUNDGE_TYPE_RATE:
+            result.ix[0, 'commission_fee'] = firsttradecash * poundgeRate * 2
+        else:
+            result.ix[0, 'commission_fee'] = firsttradecash / (multiplier * result.ix[0, 'openprice']) * poundgeFee * 2
+        result['per earn'] = 0  # 单笔盈亏
+        result['own cash'] = 0  # 自有资金线
+        result['trade money'] = 0  # 杠杆后的可交易资金线
 
-    result.ix[0,'funcuve']=firsttradecash*(1+result.ix[0,'ret_r'])-60
-    result.ix[0,'per earn']=firsttradecash*result.ix[0,'ret_r']
-    #加入maxcash用于计算最大回撤
-    maxcash=initial_cash+result.ix[0,'per earn']-result.ix[0,'commission_fee']
-    result.ix[0,'own cash']=maxcash
-    result.ix[0,'trade money']=result.ix[0,'own cash']/margin_rate
-    oprtimes=result.shape[0]
-    for i in np.arange(1,oprtimes):
-        result.ix[i, 'funcuve']=result.ix[i-1,'funcuve']*(1+result.ix[i,'ret_r'])-60
-        commission=result.ix[i-1,'trade money'] * commission_ratio * 2
-        perearn=result.ix[i-1,'trade money']*result.ix[i, 'ret_r']
-        owncash=result.ix[i-1,'own cash'] + perearn - commission
-        maxcash=max(maxcash,owncash)
-        retrace_rate=(maxcash-owncash)/maxcash
-        result.ix[i, 'own cash'] = owncash
-        result.ix[i, 'commission_fee'] = commission
-        result.ix[i, 'per earn'] = perearn
-        result.ix[i, 'trade money']=owncash/margin_rate
-        result.ix[i, 'retrace rate'] = retrace_rate
+        result.ix[0, 'per earn'] = firsttradecash * result.ix[0, 'ret_r']
+        result.ix[0, 'own cash'] = initial_cash + result.ix[0, 'per earn'] - result.ix[0, 'commission_fee']
+        result.ix[0, 'trade money'] = result.ix[0, 'own cash'] / margin_rate
+        oprtimes = result.shape[0]
+        for i in np.arange(1, oprtimes):
+            # 根据手续费类型计算手续费
+            if poundgeType == symbolinfo.POUNDGE_TYPE_RATE:
+                commission = result.ix[i - 1, 'trade money'] * poundgeRate * 2
+            else:
+                commission = result.ix[i - 1, 'trade money'] / (multiplier * result.ix[i, 'openprice']) * poundgeFee * 2
+            perearn = result.ix[i - 1, 'trade money'] * result.ix[i, 'ret_r']
+            owncash = result.ix[i - 1, 'own cash'] + perearn - commission
+            result.ix[i, 'own cash'] = owncash
+            result.ix[i, 'commission_fee'] = commission
+            result.ix[i, 'per earn'] = perearn
+            result.ix[i, 'trade money'] = owncash / margin_rate
 
-    endcash=result.ix[oprtimes-1,'own cash']
-    mincash=result['own cash'].min()
-    maxcash=result['own cash'].max()
-    successrate=(result.loc[result['ret']>0]).shape[0]/float(oprtimes)
-    commission_fee=result['commission_fee'].sum()
-    max_single_loss_rate=abs(result['ret_r'].min())
-    max_retrace_rate=result['retrace rate'].max()
+        endcash = result.ix[oprtimes - 1, 'own cash']
+        Annual = RS.annual_return(result)
+        Sharpe = RS.sharpe_ratio(result)
+        DrawBack = RS.max_drawback(result)[0]
+        SR = RS.success_rate(result)
+        max_single_loss_rate = abs(result['ret_r'].min())
 
-    results={
-        'opentimes': oprtimes,
-        'successrate':successrate,
-        'initial_cash':initial_cash,
-        'commission_fee':commission_fee,
-        'end_cash': endcash,
-        'min_cash':mincash,
-        'max_cash':maxcash,
-        'max_single_loss_rate':max_single_loss_rate,
-        'max_retrace_rate':max_retrace_rate
-    }
-
+        results = {
+            'opentimes': oprtimes,
+            'end_cash': endcash,
+            'SR': SR,
+            'Annual': Annual,
+            'Sharpe': Sharpe,
+            'DrawBack': DrawBack,
+            'max_single_loss_rate': max_single_loss_rate
+        }
     closeopr=result.loc[:,'closetime':'tradetype']
 
     return result,df,closeopr,results
@@ -248,8 +249,9 @@ if __name__ == '__main__':
     backtest_startdate=conf.get('backtest','start_time')
     backtest_enddate=conf.get('backtest','end_time')
     initial_cash=conf.getint('backtest','initial_cash')
+    margin_rate = conf.getfloat('backtest', 'margin_rate')
+    symbolinfo=DC.SymbolInfo(symbol)
     commission_ratio=conf.getfloat('backtest','commission_ratio')
-    margin_rate=conf.getfloat('backtest','margin_rate')
     slip = conf.getfloat('backtest','slip')
 
     DMI_N=conf.getint('para','DMI_N')
@@ -285,7 +287,7 @@ if __name__ == '__main__':
         'margin_rate':margin_rate,
         'slip':slip
     }
-    result,df,closeopr,results=LvyiWin(rawdata,paraset,swaplist)
+    result,df,closeopr,results=LvyiWin(symbolinfo,rawdata,paraset,swaplist)
     print results
     result.to_csv(symbol+str(K_MIN)+'result.csv')
     #df.to_csv(symbol+str(K_MIN)+'all.csv')

@@ -136,12 +136,12 @@ if __name__ == '__main__':
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
     starttime='2016-01-01 00:00:00'
-    endtime='2018-01-01 00:00:00'
+    endtime='2018-03-31 23:59:59'
     #优化参数
     #stoplossStep=-0.002
     #stoplossList = np.arange(-0.02, -0.04, stoplossStep)
-    stoplossList=[-0.022,-0.028]
-    winSwitchList=[0.009,0.01]
+    stoplossList=[-0.022]
+    winSwitchList=[0.009]
     #文件路径
     upperpath=DC.getUpperPath(uppernume=2)
     resultpath=upperpath+"\\Results\\"

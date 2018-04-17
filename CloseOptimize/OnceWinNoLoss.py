@@ -230,16 +230,16 @@ if __name__ == '__main__':
     sec_id='RB'
     symbol = '.'.join([exchange_id, sec_id])
     K_MIN = 600
-    topN=5000
+    topN=1000
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
-    starttime='2017-09-01'
-    endtime='2017-12-11'
-    tickstarttime='2017-10-01'
-    tickendtime='2017-12-01'
+    starttime='2016-01-01'
+    endtime='2018-03-31'
+    tickstarttime='2016-01-01'
+    tickendtime='2018-03-31'
     #优化参数
     stoplossStep=0.001
-    #winSwitchList = np.arange(0.003, 0.011, stoplossStep)
+    #winSwitchList = np.arange(0.006, 0.011, stoplossStep)
     winSwitchList=[0.009]
     nolossThreshhold=3*pricetick
 
@@ -255,8 +255,8 @@ if __name__ == '__main__':
     totalnum=finalresult.shape[0]
 
     #原始数据处理
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
+    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime+' 00:00:00',endtime=endtime+' 23:59:59')
+    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime+' 00:00:00',endtime=endtime+' 23:59:59')
     #bar1m计算longHigh,longLow,shortHigh,shortLow
     bar1m['longHigh']=bar1m['high']
     bar1m['shortHigh']=bar1m['high']
@@ -267,13 +267,14 @@ if __name__ == '__main__':
     bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
-    tickdatasupplier = DC.TickDataSupplier(symbol, tickstarttime, tickendtime)
+    #tickdatasupplier = DC.TickDataSupplier(symbol, tickstarttime, tickendtime)
 
     os.chdir(oprresultpath)
     allresultdf = pd.DataFrame(columns=['setname', 'winSwitch','worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                                      'old_SR',
                                      'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
                                      'maxSingleLoss', 'maxSingleDrawBack'])
+    allnum = 0
     for winSwitch in winSwitchList:
         resultList = []
         ownlFolderName="OnceWinNoLoss" + str(winSwitch*1000)
@@ -282,7 +283,7 @@ if __name__ == '__main__':
         except:
             print "dir already exist!"
         print ("OnceWinNoLoss WinSwitch:%f"%winSwitch)
-
+        '''
         #顺序执行
         for sn in range(0, topN):
             opr = finalresult.iloc[sn]
@@ -290,12 +291,12 @@ if __name__ == '__main__':
             ownlCalRealTick(symbol,K_MIN,setname,tickdatasupplier,barxm,winSwitch,nolossThreshhold,slip,ownlFolderName + '\\')
 
         '''
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
         l = []
-
-        for sn in range(0,topN):
+        for sn in range(0,totalnum):
             opr = finalresult.iloc[sn]
             setname = opr['Setname']
+            #ownlCal(symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,ownlFolderName + '\\')
             l.append(pool.apply_async(ownlCal,
                                       (symbol,K_MIN,setname,bar1m,barxm,winSwitch,nolossThreshhold,slip,ownlFolderName + '\\')))
         pool.close()
@@ -311,6 +312,6 @@ if __name__ == '__main__':
             allnum+=1
         resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
         resultdf.to_csv(ownlFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(winSwitch)+'.csv')
-        '''
-    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    #allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_ownl_by_tick.csv')
+
+    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_ownl_by_tick.csv')

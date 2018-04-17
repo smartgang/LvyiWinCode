@@ -223,6 +223,7 @@ while 1:
     time.sleep(10)
     i+=1
 '''
+'''
 #批量重命名文件
 import os
 import pandas as pd
@@ -240,3 +241,6 @@ for sn in range(0, topN):
     srcfile='SHFE.RB600 '+setname+' resultDSL_by_realtick.csv'
     dstfile='SHFE.RB600 '+setname+' resultOWNL_by_realtick.csv'
     os.rename(srcfile,dstfile)#重命名文件
+'''
+from selenium import webdriver
+webdriver.Firefox()

@@ -13,12 +13,12 @@ parasetname = 'ParameterOptSet1.csv'
 
 #=============止损控制开关===================
 calcDsl_close=True
-calcOwnl_close=True
-calcDslOwnl_close=True
+calcOwnl_close=False
+calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002
 dslTargetStart_close=-0.022
-dslTargetEnd_close = -0.023
+dslTargetEnd_close = -0.024
 #ownl参数
 ownlStep_close=0.001
 ownlTargetStart_close = 0.009
@@ -33,7 +33,7 @@ forwardWinEnd=12
 common_forward=False #普通回测结果推进
 calcDsl_forward=False
 calcOwnl_forward=False
-calcDslOwnl_forward=True
+calcDslOwnl_forward=False
 #dsl参数
 dslStep_forward=-0.002
 dslTargetStart_forward=-0.010

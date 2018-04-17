@@ -409,10 +409,10 @@ if __name__ == '__main__':
     topN=5000
     pricetick=DC.getPriceTick(symbol)
     slip=pricetick
-    starttime='2017-09-01'
-    endtime='2017-12-11'
-    tickstarttime='2017-10-01'
-    tickendtime='2017-12-01'
+    starttime='2016-01-01'
+    endtime='2018-03-31'
+    tickstarttime='2016-01-01'
+    tickendtime='2018-03-31'
     #优化参数
     stoplossStep=-0.002
     #stoplossList = np.arange(-0.022, -0.042, stoplossStep)
@@ -430,8 +430,8 @@ if __name__ == '__main__':
 
     #原始数据处理
 
-    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
-    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime+' 00:00:00',endtime=endtime+' 00:00:00')
+    bar1m=DC.getBarData(symbol=symbol,K_MIN=60,starttime=starttime+' 00:00:00',endtime=endtime+' 23:59:59')
+    barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=starttime+' 00:00:00',endtime=endtime+' 23:59:59')
     #bar1m计算longHigh,longLow,shortHigh,shortLow
     bar1m['longHigh']=bar1m['high']
     bar1m['shortHigh']=bar1m['high']
@@ -442,7 +442,7 @@ if __name__ == '__main__':
     bar1m.loc[bar1m['open']<bar1m['close'],'longHigh']=bar1m['highshift1']
     bar1m.loc[bar1m['open']>bar1m['close'],'shortLow']=bar1m['lowshift1']
 
-    tickdatasupplier=DC.TickDataSupplier(symbol,tickstarttime,tickendtime)
+    #tickdatasupplier=DC.TickDataSupplier(symbol,tickstarttime,tickendtime)
 
     os.chdir(oprresultpath)
     allresultdf = pd.DataFrame(columns=['setname', 'slTarget','worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
@@ -458,11 +458,11 @@ if __name__ == '__main__':
         except:
             print 'folder already exist'
         print ("stoplossTarget:%f"%stoplossTarget)
-
+        '''
         for sn in range(0, topN):
             opr = finalresult.iloc[sn]
             setname=opr['Setname']
-            dslCalRealTick(symbol, K_MIN, setname, tickdatasupplier,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')
+            #dslCalRealTick(symbol, K_MIN, setname, tickdatasupplier,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')
             #l=dslCal(symbol=symbol,K_MIN=K_MIN,setname=setname,bar1m=bar1m,barxm=barxm,pricetick=pricetick,slip=slip,slTarget=stoplossTarget,tofolder=dslFolderName+'\\')
             #resultList.append(l)
             #allresultlist.append(l)
@@ -471,17 +471,16 @@ if __name__ == '__main__':
         pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
         l = []
 
-        for sn in range(0,topN):
+        for sn in range(0,totalnum):
             opr = finalresult.iloc[sn]
             setname = opr['Setname']
-            #l.append(pool.apply_async(dslCal,
-            #                          (symbol, K_MIN, setname, bar1m,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
-            l.append(pool.apply_async(dslCalRealTick,
-                                      (symbol, K_MIN, setname, tickdatasupplier,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
+            l.append(pool.apply_async(dslCal,
+                                      (symbol, K_MIN, setname, bar1m,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
+            #l.append(pool.apply_async(dslCalRealTick,
+            #                          (symbol, K_MIN, setname, tickdatasupplier,barxm,pricetick,slip,stoplossTarget, dslFolderName + '\\')))
         pool.close()
         pool.join()
-        '''
-        '''
+
         resultdf=pd.DataFrame(columns=['setname','slTarget','worknum','old_endcash','old_Annual','old_Sharpe','old_Drawback','old_SR',
                                                   'new_endcash','new_Annual','new_Sharpe','new_Drawback','new_SR','maxSingleLoss','maxSingleDrawBack'])
         i = 0
@@ -492,6 +491,6 @@ if __name__ == '__main__':
             allnum+=1
         resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
         resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+' finalresult_by_tick'+str(stoplossTarget)+'.csv')
-        '''
-    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    #allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')
+
+    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    allresultdf.to_csv(symbol + str(K_MIN) + ' finalresult_dsl_by_tick.csv')
