@@ -23,7 +23,7 @@ def resultCalc():
     symbolset = pd.read_excel(resultpath + LvyiWin_Parameter.symbol_KMIN_set_filename)
     symbolsetNum = symbolset.shape[0]
     for i in range(symbolsetNum):
-        strategyName=symbolset.ix[i, 'strategyName'],
+        strategyName=symbolset.ix[i, 'strategyName']
         exchangeid = symbolset.ix[i, 'exchange_id']
         secid = symbolset.ix[i, 'sec_id']
         symbol = '.'.join([exchangeid, secid])
@@ -31,6 +31,10 @@ def resultCalc():
         foldername=' '.join([strategyName, exchangeid, secid, str(K_MIN)])
         print ("collecting %s %d final results"%(symbol,K_MIN))
         result = pd.read_csv(foldername+'\\'+"%s %d finalresults.csv" % (symbol, K_MIN))
+        result['strategyName']=strategyName
+        result['exchange_id']=exchangeid
+        result['sec_id'] = secid
+        result['K_MIN'] = K_MIN
         allsymbolresult=pd.concat([allsymbolresult,result])
 
     allsymbolresult.to_csv(LvyiWin_Parameter.strategyName + "_symbol_KMIN_results.csv")
