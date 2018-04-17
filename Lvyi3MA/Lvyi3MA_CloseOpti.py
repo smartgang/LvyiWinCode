@@ -19,7 +19,16 @@ def bar1mPrepare(bar1m):
     bar1m['lowshift1'] = bar1m['low'].shift(1).fillna(0)
     bar1m.loc[bar1m['open'] < bar1m['close'], 'longHigh'] = bar1m['highshift1']
     bar1m.loc[bar1m['open'] > bar1m['close'], 'shortLow'] = bar1m['lowshift1']
-    return bar1m
+
+    bar=pd.DataFrame()
+    bar['longHigh']=bar1m['longHigh']
+    bar['longLow']=bar1m['longLow']
+    bar['shortHigh']=bar1m['shortHigh']
+    bar['shortLow']=bar1m['shortLow']
+    bar['strtime']=bar1m['strtime']
+    bar['utc_time']=bar1m['utc_time']
+    bar['Unnamed: 0']=bar1m['Unnamed: 0']
+    return bar
 
 def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
     symbol=symbolInfo.symbol
