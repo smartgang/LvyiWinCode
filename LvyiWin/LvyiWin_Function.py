@@ -29,6 +29,7 @@ def resultCalc():
         symbol = '.'.join([exchangeid, secid])
         K_MIN=symbolset.ix[i, 'K_MIN']
         foldername=' '.join([strategyName, exchangeid, secid, str(K_MIN)])
+        print ("collecting %s %d final results"%(symbol,K_MIN))
         result = pd.read_csv(foldername+'\\'+"%s %d finalresults.csv" % (symbol, K_MIN))
         allsymbolresult=pd.concat([allsymbolresult,result])
 
