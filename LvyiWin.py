@@ -191,7 +191,7 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
     if calcResult:
         initialCash = 20000
         positionRation = 1
-        result['commission_fee'], result['per earn'], result['own cash'] = RS.calcResult(result, symbolinfo,
+        result['commission_fee'], result['per earn'], result['own cash'],result['hands'] = RS.calcResult(result, symbolinfo,
                                                                                          initialCash, positionRation)
 
         endcash = result['own cash'].iloc[-1]
@@ -249,6 +249,7 @@ if __name__ == '__main__':
     swaplist=np.array(contractswaplist.swaputc)
     paraset={
         'symbol':symbol,
+        'Setname':'sigletest',
         'KDJ_N':KDJ_N,
         'KDJ_M':KDJ_M,
         'KDJ_HLim':KDJ_HLim,
