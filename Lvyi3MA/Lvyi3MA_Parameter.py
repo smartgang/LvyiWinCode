@@ -10,10 +10,13 @@ K_MIN = 600
 startdate='2016-01-01'
 enddate = '2017-12-31'
 parasetname = 'ParameterOptSet3MA.csv'
+positionRatio = 1 #持仓比例
+initialCash = 20000 #起始资金
 
 #=============止损控制开关===================
 calcDsl_close=False
 calcOwnl_close=True
+calsFrsl_close=True
 calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002
@@ -24,6 +27,10 @@ ownlStep_close=0.001
 ownlTargetStart_close = 0.008
 ownltargetEnd_close = 0.011
 nolossThreshhold_close = 3
+#frsl参数
+frslStep_close= -0.002
+frslTargetStart_close = -0.005
+frslTragetEnd_close = -0.015
 #=============推进控制开关===================
 nextMonthName='Jan-18'
 forwardWinStart=1

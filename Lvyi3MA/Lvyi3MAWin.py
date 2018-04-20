@@ -33,7 +33,8 @@ def removeContractSwap(resultlist, contractswaplist):
     return results
 
 
-def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResult=True):
+def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,initialCash,calcResult=True):
+    setname = paraset['Setname']
     print setname
     MA_Short = paraset['MA_Short']
     MA_Mid = paraset['MA_Mid']
@@ -118,45 +119,19 @@ def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResul
     # 去掉跨合约的操作
     result = removeContractSwap(result, contractswaplist)
 
-    initial_cash = 20000
-    margin_rate = 0.2
     slip = symbolinfo.getSlip()
-    multiplier = symbolinfo.getMultiplier()
-    poundgeType, poundgeFee, poundgeRate = symbolinfo.getPoundage()
 
     result['ret'] = ((result['closeprice'] - result['openprice']) * result['tradetype']) - slip
     result['ret_r'] = result['ret'] / result['openprice']
     results = {}
 
     if calcResult:
-        firsttradecash = initial_cash / margin_rate
-        result['commission_fee'] = 0
-        if poundgeType == symbolinfo.POUNDGE_TYPE_RATE:
-            result.ix[0, 'commission_fee'] = firsttradecash * poundgeRate * 2
-        else:
-            result.ix[0, 'commission_fee'] = firsttradecash / (multiplier * result.ix[0, 'openprice']) * poundgeFee * 2
-        result['per earn'] = 0  # 单笔盈亏
-        result['own cash'] = 0  # 自有资金线
-        result['trade money'] = 0  # 杠杆后的可交易资金线
+        result['commission_fee'], result['per earn'], result['own cash'], result['hands'] = RS.calcResult(result,
+                                                                                                          symbolinfo,
+                                                                                                          initialCash,
+                                                                                                          positionRatio)
 
-        result.ix[0, 'per earn'] = firsttradecash * result.ix[0, 'ret_r']
-        result.ix[0, 'own cash'] = initial_cash + result.ix[0, 'per earn'] - result.ix[0, 'commission_fee']
-        result.ix[0, 'trade money'] = result.ix[0, 'own cash'] / margin_rate
-        oprtimes = result.shape[0]
-        for i in np.arange(1, oprtimes):
-            # 根据手续费类型计算手续费
-            if poundgeType == symbolinfo.POUNDGE_TYPE_RATE:
-                commission = result.ix[i - 1, 'trade money'] * poundgeRate * 2
-            else:
-                commission = result.ix[i - 1, 'trade money'] / (multiplier * result.ix[i, 'openprice']) * poundgeFee * 2
-            perearn = result.ix[i - 1, 'trade money'] * result.ix[i, 'ret_r']
-            owncash = result.ix[i - 1, 'own cash'] + perearn - commission
-            result.ix[i, 'own cash'] = owncash
-            result.ix[i, 'commission_fee'] = commission
-            result.ix[i, 'per earn'] = perearn
-            result.ix[i, 'trade money'] = owncash / margin_rate
-
-        endcash = result.ix[oprtimes - 1, 'own cash']
+        endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
         Sharpe = RS.sharpe_ratio(result)
         DrawBack = RS.max_drawback(result)[0]
@@ -165,10 +140,7 @@ def Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, contractswaplist, calcResul
 
         results = {
             'Setname':setname,
-            'MA_Short':MA_Short,
-            'MA_Mid':MA_Mid,
-            'MA_Long':MA_Long,
-            'opentimes': oprtimes,
+            'opentimes': result.shape[0],
             'end_cash': endcash,
             'SR': SR,
             'Annual': Annual,
@@ -199,12 +171,12 @@ if __name__ == '__main__':
     contractswaplist = DC.getContractSwaplist(symbol)
     swaplist = np.array(contractswaplist.swaputc)
     paraset = {
+        'Setname':'singletest',
         'symbol': symbol,
         'MA_Short': MA_Short,
         'MA_Mid': MA_Mid,
         'MA_Long': MA_Long,
     }
-    setname= "testset"
-    result, df, closeopr, results = Lvyi3MAWin(symbolinfo, setname,rawdata, paraset, swaplist)
+    result, df, closeopr, results = Lvyi3MAWin(symbolinfo, rawdata, paraset,swaplist, 1,20000)
     print results
     result.to_csv(symbolinfo.symbol + str(K_MIN) + 'result.csv')

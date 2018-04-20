@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import numpy as np
 import multiprocessing
-import Lvyi3MA_Parameter
+import Lvyi3MA_Parameter as Parameter
 
 def bar1mPrepare(bar1m):
     bar1m['longHigh'] = bar1m['high']
@@ -32,15 +32,14 @@ def bar1mPrepare(bar1m):
     bar['low']=bar1m['low']
     return bar
 
-def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
+def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,positionRatio,initialCash):
     symbol=symbolInfo.symbol
     pricetick=symbolInfo.getPriceTick()
-    slip=symbolInfo.getSlip()
     allresultdf = pd.DataFrame(
         columns=['setname', 'slTarget', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                  'old_SR',
                  'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
-                 'maxSingleLoss', 'maxSingleDrawBack'])
+                 'maxSingleLoss'])
     allnum = 0
     paranum=parasetlist.shape[0]
     for stoplossTarget in stoplossList:
@@ -56,8 +55,7 @@ def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
         resultdf = pd.DataFrame(
             columns=['setname', 'slTarget', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                      'old_SR',
-                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR', 'maxSingleLoss',
-                     'maxSingleDrawBack'])
+                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR', 'maxSingleLoss'])
         setnum = 0
         numlist = range(0, paranum, 100)
         numlist.append(paranum)
@@ -65,32 +63,29 @@ def getDSL(symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm):
             pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
             l = []
             for a in range(numlist[n - 1], numlist[n]):
-                setname = parasetlist.ix[a,'Setname']
-                # l.append(dsl.dslCal(symbol, K_MIN_SAR, fullsetname, bar1m, barxm,pricetick,slip, stoplossTarget, dslFolderName + '\\'))
-                l.append(pool.apply_async(dsl.dslCal,(symbol, K_MIN, setname, bar1m, barxm,pricetick,slip, stoplossTarget, dslFolderName + '\\')))
+                setname = parasetlist.ix[a, 'Setname']
+                l.append(pool.apply_async(dsl.dslCal, (strategyName,
+                                                       symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
             pool.close()
             pool.join()
 
             for res in l:
-                resultdf.loc[setnum]=res.get()
-                allresultdf.loc[allnum]=resultdf.loc[setnum]
-                setnum+=1
-                allnum+=1
-        resultdf['cashDelta']=resultdf['new_endcash']-resultdf['old_endcash']
-        resultdf.to_csv(dslFolderName+'\\'+symbol+str(K_MIN)+' finalresult_dsl'+str(stoplossTarget)+'.csv')
+                resultdf.loc[setnum] = res.get()
+                allresultdf.loc[allnum] = resultdf.loc[setnum]
+                setnum += 1
+                allnum += 1
+        resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
+        resultdf.to_csv(dslFolderName + '\\' + strategyName+' '+symbol + str(K_MIN) + ' finalresult_dsl' + str(stoplossTarget) + '.csv')
 
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    allresultdf.to_csv(symbol + str(K_MIN)+' finalresult_dsl.csv')
-    #return allresultdf
+    allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_dsl.csv')
 
-def getOwnl(symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm):
+def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash):
     symbol=symbolInfo.symbol
-    slip=symbolInfo.getSlip()
     ownlallresultdf = pd.DataFrame(
         columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                  'old_SR',
-                 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
-                 'maxSingleLoss', 'maxSingleDrawBack'])
+                 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR','maxSingleLoss'])
     allnum=0
     for winSwitch in winSwitchList:
         ownlFolderName = "OnceWinNoLoss" + str(winSwitch * 1000)
@@ -101,37 +96,37 @@ def getOwnl(symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,ba
             pass
         print ("OnceWinNoLoss WinSwitch:%f" % winSwitch)
 
-        pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
-        l = []
-        for sn in range(0, paranum):
-            setname = parasetlist.ix[sn,'Setname']
-           # l.append(dsl.dslCal(symbol, K_MIN_SAR, fullsetname, bar1m, barxm,pricetick,slip, stoplossTarget, dslFolderName + '\\'))
-            l.append(pool.apply_async(ownl.ownlCal,(symbol, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, slip,
-                         ownlFolderName + '\\')))
-        pool.close()
-        pool.join()
+        ownlresultdf = pd.DataFrame(
+            columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+                     'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR','maxSingleLoss'])
 
-        ownlresultdf = pd.DataFrame(columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                     'old_SR','new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR','maxSingleLoss', 'maxSingleDrawBack'])
+        setnum = 0
+        numlist = range(0, paranum, 100)
+        numlist.append(paranum)
+        for n in range(1, len(numlist)):
+            pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
+            l = []
+            for a in range(numlist[n - 1], numlist[n]):
+                setname = parasetlist.ix[a, 'Setname']
+                l.append(pool.apply_async(ownl.ownlCal,
+                                          (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
+                                           ownlFolderName + '\\')))
+            pool.close()
+            pool.join()
 
-        i = 0
-        for res in l:
-            ownlresultdf.loc[i] = res.get()
-            ownlallresultdf.loc[allnum] = ownlresultdf.loc[i]
-            i += 1
-            allnum += 1
-
+            for res in l:
+                ownlresultdf.loc[setnum] = res.get()
+                ownlallresultdf.loc[allnum] = ownlresultdf.loc[setnum]
+                setnum += 1
+                allnum += 1
         ownlresultdf['cashDelta'] = ownlresultdf['new_endcash'] - ownlresultdf['old_endcash']
-        ownlresultdf.to_csv(ownlFolderName + '\\' + symbol + str(K_MIN) + ' finalresult_ownl' + str(winSwitch) + '.csv')
+        ownlresultdf.to_csv(ownlFolderName + '\\' +strategyName+' '+ symbol + str(K_MIN) + ' finalresult_ownl' + str(winSwitch) + '.csv')
 
     ownlallresultdf['cashDelta'] = ownlallresultdf['new_endcash'] - ownlallresultdf['old_endcash']
-    ownlallresultdf.to_csv(symbol + str(K_MIN)+' finalresult_ownl.csv')
-    #return ownlallresultdf
+    ownlallresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_ownl.csv')
 
-def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
+def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash):
     symbol=symbolInfo.symbol
-    slip=symbolInfo.getSlip()
-
     allresultdf = pd.DataFrame(
         columns=['setname', 'dslTarget', 'ownlWinSwtich', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                  'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
@@ -153,7 +148,7 @@ def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
             for sn in range(0, paranum):
                 setname = parasetlist.ix[sn, 'Setname']
                 l.append(pool.apply_async(dslownl.dslAndownlCal,
-                                                  (symbol, K_MIN,setname, stoplossTarget, winSwitch, slip, dslFolderName,
+                                                  (strategyName,symbolInfo, K_MIN,setname, stoplossTarget, winSwitch, positionRatio,initialCash,dslFolderName,
                                                    ownlFolderName, newfolder + '\\')))
             pool.close()
             pool.join()
@@ -169,48 +164,50 @@ def getDslOwnl(symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList):
                 allresultdf.loc[allnum] = resultdf.loc[i]
                 i += 1
                 allnum+=1
-            resultfilename = ("%s%d finalresult_dsl%.3f_ownl%.3f.csv" % (symbol, K_MIN, stoplossTarget, winSwitch))
+            resultfilename = ("%s %s%d finalresult_dsl%.3f_ownl%.3f.csv" % (strategyName,symbol, K_MIN, stoplossTarget, winSwitch))
             resultdf.to_csv(newfolder + '\\' + resultfilename)
 
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    allresultdf.to_csv(symbol + str(K_MIN)+ ' finalresult_dsl_ownl.csv')
-    #return allresultdf
+    allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_dsl_ownl.csv')
+
 
 if __name__=='__main__':
     # 文件路径
-    upperpath = DC.getUpperPath(Lvyi3MA_Parameter.folderLevel)
-    resultpath = upperpath + Lvyi3MA_Parameter.resultFolderName
+    upperpath = DC.getUpperPath(Parameter.folderLevel)
+    resultpath = upperpath + Parameter.resultFolderName
 
     # 取参数集
-    parasetlist = pd.read_csv(resultpath + Lvyi3MA_Parameter.parasetname)
+    parasetlist = pd.read_csv(resultpath + Parameter.parasetname)
     paranum = parasetlist.shape[0]
 
     # 参数设置
     strategyParameterSet = []
-    if not Lvyi3MA_Parameter.symbol_KMIN_opt_swtich:
+    if not Parameter.symbol_KMIN_opt_swtich:
         # 单品种单周期模式
         paradic = {
-            'strategyName': Lvyi3MA_Parameter.strategyName,
-            'exchange_id': Lvyi3MA_Parameter.exchange_id,
-            'sec_id': Lvyi3MA_Parameter.sec_id,
-            'K_MIN': Lvyi3MA_Parameter.K_MIN,
-            'startdate': Lvyi3MA_Parameter.startdate,
-            'enddate': Lvyi3MA_Parameter.enddate,
-            'calcDsl': Lvyi3MA_Parameter.calcDsl_close,
-            'calcOwnl': Lvyi3MA_Parameter.calcOwnl_close,
-            'calcDslOwnl': Lvyi3MA_Parameter.calcDslOwnl_close,
-            'dslStep':Lvyi3MA_Parameter.dslStep_close,
-            'dslTargetStart':Lvyi3MA_Parameter.dslTargetStart_close,
-            'dslTargetEnd':Lvyi3MA_Parameter.dslTargetEnd_close,
-            'ownlStep' : Lvyi3MA_Parameter.ownlStep_close,
-            'ownlTargetStart': Lvyi3MA_Parameter.ownlTargetStart_close,
-            'ownltargetEnd': Lvyi3MA_Parameter.ownltargetEnd_close,
-            'nolossThreshhold':Lvyi3MA_Parameter.nolossThreshhold_close
+            'strategyName': Parameter.strategyName,
+            'exchange_id': Parameter.exchange_id,
+            'sec_id': Parameter.sec_id,
+            'K_MIN': Parameter.K_MIN,
+            'startdate': Parameter.startdate,
+            'enddate': Parameter.enddate,
+            'positionRatio':Parameter.positionRatio,
+            'initialCash' : Parameter.initialCash,
+            'calcDsl': Parameter.calcDsl_close,
+            'calcOwnl': Parameter.calcOwnl_close,
+            'calcDslOwnl': Parameter.calcDslOwnl_close,
+            'dslStep':Parameter.dslStep_close,
+            'dslTargetStart':Parameter.dslTargetStart_close,
+            'dslTargetEnd':Parameter.dslTargetEnd_close,
+            'ownlStep' : Parameter.ownlStep_close,
+            'ownlTargetStart': Parameter.ownlTargetStart_close,
+            'ownltargetEnd': Parameter.ownltargetEnd_close,
+            'nolossThreshhold':Parameter.nolossThreshhold_close
         }
         strategyParameterSet.append(paradic)
     else:
         # 多品种多周期模式
-        symbolset = pd.read_excel(resultpath + Lvyi3MA_Parameter.stoploss_set_filename,index_col='No')
+        symbolset = pd.read_excel(resultpath + Parameter.stoploss_set_filename,index_col='No')
         symbolsetNum = symbolset.shape[0]
         for i in range(symbolsetNum):
             exchangeid = symbolset.ix[i, 'exchange_id']
@@ -222,6 +219,8 @@ if __name__=='__main__':
                 'K_MIN': symbolset.ix[i, 'K_MIN'],
                 'startdate': symbolset.ix[i, 'startdate'],
                 'enddate': symbolset.ix[i, 'enddate'],
+                'positionRatio' : Parameter.positionRatio,
+                'initialCash' : Parameter.initialCash,
                 'calcDsl': symbolset.ix[i, 'calcDsl'],
                 'calcOwnl': symbolset.ix[i, 'calcOwnl'],
                 'calcDslOwnl': symbolset.ix[i, 'calcDslOwnl'],
@@ -244,6 +243,9 @@ if __name__=='__main__':
         startdate = strategyParameter['startdate']
         enddate = strategyParameter['enddate']
         symbol = '.'.join([exchange_id, sec_id])
+
+        positionRatio = strategyParameter['positionRatio']
+        initialCash = strategyParameter['initialCash']
 
         symbolinfo = DC.SymbolInfo(symbol)
         slip = DC.getSlip(symbol)
@@ -275,10 +277,10 @@ if __name__=='__main__':
         bar1m=bar1mPrepare(bar1m)
 
         if calcDsl:
-            getDSL(symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm)
+            getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash)
 
         if calcOwnl:
-            getOwnl(symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm)
+            getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash)
 
         if calcDslOwnl:
-            getDslOwnl(symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList)
+            getDslOwnl(strategyName,symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash)
