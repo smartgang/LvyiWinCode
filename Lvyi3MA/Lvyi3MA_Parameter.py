@@ -14,23 +14,24 @@ positionRatio = 1 #持仓比例
 initialCash = 20000 #起始资金
 
 #=============止损控制开关===================
-calcDsl_close=False
+calcDsl_close=True
 calcOwnl_close=True
-calsFrsl_close=True
+calcFrsl_close=True
+calcMultiSLT_close=True
 calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002
-dslTargetStart_close=-0.010
-dslTargetEnd_close = -0.042
+dslTargetStart_close=-0.018
+dslTargetEnd_close = -0.020
 #ownl参数
 ownlStep_close=0.001
-ownlTargetStart_close = 0.008
-ownltargetEnd_close = 0.011
+ownlTargetStart_close = 0.009
+ownltargetEnd_close = 0.010
 nolossThreshhold_close = 3
 #frsl参数
 frslStep_close= -0.002
 frslTargetStart_close = -0.005
-frslTragetEnd_close = -0.015
+frslTragetEnd_close = -0.011
 #=============推进控制开关===================
 nextMonthName='Jan-18'
 forwardWinStart=1
@@ -54,7 +55,7 @@ dsl_ownl_set=[[-0.018,0.009]]
 
 #===============多品种多周期优化参数=============================
 #多品种多周期优化开关，打开后代码会从下面标识的文件中导入参数
-symbol_KMIN_opt_swtich=True
+symbol_KMIN_opt_swtich=False
 
 #1.品种和周期组合文件
 symbol_KMIN_set_filename=strategyName+'_symbol_KMIN_set.xlsx'
