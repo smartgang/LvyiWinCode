@@ -5,22 +5,23 @@ LvyiWin辅助功能
 import pandas as pd
 import numpy as np
 import os
-import LvyiWin_Parameter
+import LvyiWin_Parameter as Parameter
 import DATA_CONSTANTS as DC
+
 def resultCalc():
     '''
     重新统计多品种多周期的回测结果
     将各文件夹中的finalResult文件汇总到一起
     :return:
     '''
-    upperpath=DC.getUpperPath(LvyiWin_Parameter.folderLevel)
-    resultpath = upperpath + LvyiWin_Parameter.resultFolderName
+    upperpath=DC.getUpperPath(Parameter.folderLevel)
+    resultpath = upperpath + Parameter.resultFolderName
     os.chdir(resultpath)
     allsymbolresult = pd.DataFrame(columns=
                                    ['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N', 'opentimes', 'end_cash',
                                     'SR', 'Annual', 'Sharpe', 'DrawBack', 'max_single_loss_rate',
                                     'strategyName', 'exchange_id', 'sec_id', 'K_MIN'])
-    symbolset = pd.read_excel(resultpath + LvyiWin_Parameter.symbol_KMIN_set_filename)
+    symbolset = pd.read_excel(resultpath + Parameter.symbol_KMIN_set_filename)
     symbolsetNum = symbolset.shape[0]
     for i in range(symbolsetNum):
         strategyName=symbolset.ix[i, 'strategyName']
@@ -37,7 +38,7 @@ def resultCalc():
         result['K_MIN'] = K_MIN
         allsymbolresult=pd.concat([allsymbolresult,result])
 
-    allsymbolresult.to_csv(LvyiWin_Parameter.strategyName + "_symbol_KMIN_results.csv")
+    allsymbolresult.to_csv(Parameter.strategyName + "_symbol_KMIN_results.csv")
     pass
 
 

@@ -44,7 +44,7 @@ def removeContractSwap(resultlist,contractswaplist):
     results = results.reset_index(drop=True)
     return results
 
-def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
+def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialCash=20000,calcResult=True):
     setname=paraset['Setname']
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
@@ -56,11 +56,6 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
     MA_Long=paraset['MA_Long']
 
     beginindex = rawdata.ix[0, 'Unnamed: 0']
-
-    initial_cash = paraset['initial_cash']
-    commission_ratio = paraset['commission_ratio']
-    margin_rate=paraset['margin_rate']
-    slip=paraset['slip']
 
     #处理KDJ数据：KDJ_OPEN做为最终KDJ的触发信号
     #KDJ_True=1:80>k>D
@@ -189,10 +184,8 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,calcResult=True):
 
     results = {}
     if calcResult:
-        initialCash = 20000
-        positionRation = 1
         result['commission_fee'], result['per earn'], result['own cash'],result['hands'] = RS.calcResult(result, symbolinfo,
-                                                                                         initialCash, positionRation)
+                                                                                         initialCash, positionRatio)
 
         endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
