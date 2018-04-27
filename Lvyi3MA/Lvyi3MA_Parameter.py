@@ -5,21 +5,21 @@
 #参数设置
 strategyName='Lvyi3MAWin'
 exchange_id = 'SHFE'
-sec_id='RB'
+sec_id='HC'
 K_MIN = 600
-startdate='2016-01-01'
-enddate = '2017-12-31'
+startdate='2014-01-01'
+enddate = '2018-04-27'
 parasetname = 'ParameterOptSet3MA.csv'
 positionRatio = 1 #持仓比例
-initialCash = 20000 #起始资金
+initialCash = 200000 #起始资金
 
 #=============止损控制开关===================
-progress_close = False
-calcDsl_close=True
+progress_close = True
+calcDsl_close=False
 calcOwnl_close=True
-calcFrsl_close=True
-calcMultiSLT_close=True
-calcDslOwnl_close=False
+calcFrsl_close=False
+calcMultiSLT_close=False
+calcDslOwnl_close=True
 #dsl参数
 dslStep_close=-0.002
 dslTargetStart_close=-0.018

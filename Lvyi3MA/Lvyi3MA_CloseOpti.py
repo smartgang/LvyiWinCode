@@ -70,6 +70,9 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
                     l.append(pool.apply_async(dsl.dslCal, (strategyName,
                                                        symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
                 else:
+                    #l.append(dsl.progressDslCal(strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, pricetick,
+                    #                                               positionRatio, initialCash, stoplossTarget,
+                    #                                               dslFolderName + '\\'))
                     l.append(pool.apply_async(dsl.progressDslCal, (strategyName,
                                                        symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
             pool.close()
@@ -120,6 +123,9 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
                                               (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
                                                ownlFolderName + '\\')))
                 else:
+                    #l.append(ownl.progressOwnlCal(strategyName, symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch,
+                    #                           nolossThreshhold, positionRatio, initialCash,
+                    #                           ownlFolderName + '\\'))
                     l.append(pool.apply_async(ownl.progressOwnlCal,
                                               (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
                                                ownlFolderName + '\\')))
