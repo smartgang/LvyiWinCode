@@ -34,7 +34,7 @@ def bar1mPrepare(bar1m):
     bar['low']=bar1m['low']
     return bar
 
-def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,positionRatio,initialCash):
+def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
     symbol=symbolInfo.symbol
     pricetick=symbolInfo.getPriceTick()
     allresultdf = pd.DataFrame(
@@ -66,7 +66,11 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
             l = []
             for a in range(numlist[n - 1], numlist[n]):
                 setname = parasetlist.ix[a, 'Setname']
-                l.append(pool.apply_async(dsl.dslCal, (strategyName,
+                if not progress:
+                    l.append(pool.apply_async(dsl.dslCal, (strategyName,
+                                                       symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
+                else:
+                    l.append(pool.apply_async(dsl.progressDslCal, (strategyName,
                                                        symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
             pool.close()
             pool.join()
@@ -82,7 +86,7 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_dsl.csv')
 
-def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash):
+def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=True):
     symbol=symbolInfo.symbol
     ownlallresultdf = pd.DataFrame(
         columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
@@ -111,9 +115,14 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
             l = []
             for a in range(numlist[n - 1], numlist[n]):
                 setname = parasetlist.ix[a, 'Setname']
-                l.append(pool.apply_async(ownl.ownlCal,
-                                          (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
-                                           ownlFolderName + '\\')))
+                if not progress:
+                    l.append(pool.apply_async(ownl.ownlCal,
+                                              (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
+                                               ownlFolderName + '\\')))
+                else:
+                    l.append(pool.apply_async(ownl.progressOwnlCal,
+                                              (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
+                                               ownlFolderName + '\\')))
             pool.close()
             pool.join()
 
@@ -279,8 +288,10 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,
         l = []
         for sn in range(0, paranum):
             setname = parasetlist.ix[sn, 'Setname']
-            l.append(pool.apply_async(msl.multiStopLosslCal,
-                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder + '\\')))
+            l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
+                                       newfolder + '\\'))
+            #l.append(pool.apply_async(msl.multiStopLosslCal,
+            #                                  (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder + '\\')))
         pool.close()
         pool.join()
 
@@ -322,6 +333,7 @@ if __name__=='__main__':
             'enddate': Parameter.enddate,
             'positionRatio':Parameter.positionRatio,
             'initialCash' : Parameter.initialCash,
+            'progress':Parameter.progress_close,
             'calcDsl': Parameter.calcDsl_close,
             'calcOwnl': Parameter.calcOwnl_close,
             'calcFrsl': Parameter.calcFrsl_close,
@@ -355,6 +367,7 @@ if __name__=='__main__':
                 'enddate': symbolset.ix[i, 'enddate'],
                 'positionRatio' : Parameter.positionRatio,
                 'initialCash' : Parameter.initialCash,
+                'progress':symbolset.ix[i,'progress'],
                 'calcDsl': symbolset.ix[i, 'calcDsl'],
                 'calcOwnl': symbolset.ix[i, 'calcOwnl'],
                 'calcFrsl': symbolset.ix[i, 'calcFrsl'],
@@ -391,6 +404,7 @@ if __name__=='__main__':
         pricetick = DC.getPriceTick(symbol)
 
         #计算控制开关
+        progress=strategyParameter['progress']
         calcDsl=strategyParameter['calcDsl']
         calcOwnl=strategyParameter['calcOwnl']
         calcFrsl=strategyParameter['calcFrsl']
@@ -439,10 +453,10 @@ if __name__=='__main__':
             getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash)
         else:
             if calcDsl:
-                getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash)
+                getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash,progress)
 
             if calcOwnl:
-                getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash)
+                getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress)
 
             if calcFrsl:
                 getFRSL(strategyName,symbolinfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash)

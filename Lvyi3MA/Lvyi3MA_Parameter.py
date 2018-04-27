@@ -14,6 +14,7 @@ positionRatio = 1 #持仓比例
 initialCash = 20000 #起始资金
 
 #=============止损控制开关===================
+progress_close = False
 calcDsl_close=True
 calcOwnl_close=True
 calcFrsl_close=True
