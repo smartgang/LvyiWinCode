@@ -12,7 +12,7 @@ def getForward(strategyName,symbolinfo,K_MIN,parasetlist,rawdatapath,startdate,e
     symbol=symbolinfo.symbol
     forwordresultpath = rawdatapath + '\\ForwardResults\\'
     forwardrankpath = rawdatapath + '\\ForwardRank\\'
-    monthlist = [datetime.strftime(x, '%b-%y') for x in list(pd.date_range(start=startdate, end=enddate, freq='M'))]
+    monthlist = [datetime.strftime(x, '%Y-%m') for x in list(pd.date_range(start=startdate, end=enddate, freq='M'))]
     monthlist.append(nextmonth)
     os.chdir(rawdatapath)
     try:
@@ -34,9 +34,9 @@ def getForward(strategyName,symbolinfo,K_MIN,parasetlist,rawdatapath,startdate,e
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     for whiteWindows in windowsSet:
-        # l.append(mtf.runPara(whiteWindows, symbol, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
-        l.append(pool.apply_async(mtf.runPara, (strategyName,
-        whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix)))
+        l.append(mtf.runPara(strategyName,whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
+        #l.append(pool.apply_async(mtf.runPara, (strategyName,
+        #whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix)))
     pool.close()
     pool.join()
 
@@ -96,7 +96,7 @@ if __name__=='__main__':
             'enddate': Parameter.enddate,
             'positionRatio': Parameter.positionRatio,
             'initialCash' : Parameter.initialCash,
-            'nextmonth':Parameter.nextMonthName,
+            #'nextmonth':Parameter.nextMonthName,
             'commonForward': Parameter.common_forward,
             'calcDsl': Parameter.calcDsl_forward,
             'calcOwnl': Parameter.calcOwnl_forward,
@@ -126,7 +126,7 @@ if __name__=='__main__':
                 'enddate': symbolset.ix[i, 'enddate'],
                 'positionRatio':Parameter.positionRatio,
                 'initialCash':Parameter.initialCash,
-                'nextmonth':symbolset.ix[i,'nextmonth'],
+                #'nextmonth':symbolset.ix[i,'nextmonth'],
                 'commonForward':symbolset.ix[i,'commonForward'],
                 'calcDsl': symbolset.ix[i, 'calcDsl'],
                 'calcOwnl': symbolset.ix[i, 'calcOwnl'],
@@ -150,7 +150,8 @@ if __name__=='__main__':
         K_MIN = strategyParameter['K_MIN']
         startdate = strategyParameter['startdate']
         enddate = strategyParameter['enddate']
-        nextmonth = strategyParameter['nextmonth']
+        #nextmonth = strategyParameter['nextmonth']
+        nextmonth = enddate[:7]
         symbol = '.'.join([exchange_id, sec_id])
 
         positionRatio=strategyParameter['positionRatio']

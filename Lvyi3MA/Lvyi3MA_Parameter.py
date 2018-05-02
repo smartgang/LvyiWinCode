@@ -7,8 +7,8 @@ strategyName='Lvyi3MAWin'
 exchange_id = 'SHFE'
 sec_id='HC'
 K_MIN = 600
-startdate='2014-01-01'
-enddate = '2018-04-27'
+startdate='2016-01-01'
+enddate = '2018-05-01'
 parasetname = 'ParameterOptSet3MA.csv'
 positionRatio = 1 #持仓比例
 initialCash = 200000 #起始资金
@@ -34,7 +34,7 @@ frslStep_close= -0.002
 frslTargetStart_close = -0.005
 frslTragetEnd_close = -0.011
 #=============推进控制开关===================
-nextMonthName='Jan-18'
+#nextMonthName='18-05'
 forwardWinStart=1
 forwardWinEnd=12
 
@@ -55,7 +55,7 @@ ownltargetEnd_forward = 0.010
 dsl_ownl_set=[[-0.018,0.009]]
 
 #==================每月参数计算=====================
-newmonth='2018-05'#要生成参数的新月份
+#newmonth='2018-05'#要生成参数的新月份
 month_n = 7 #n+x的n值，即往前推多少个月
 
 
