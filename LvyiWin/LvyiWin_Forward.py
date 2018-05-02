@@ -97,7 +97,7 @@ if __name__=='__main__':
             'enddate': Parameter.enddate,
             'positionRatio': Parameter.positionRatio,
             'initialCash' : Parameter.initialCash,
-            'nextmonth':Parameter.nextMonthName,
+            #'nextmonth':Parameter.nextMonthName,
             'commonForward': Parameter.common_forward,
             'calcDsl': Parameter.calcDsl_forward,
             'calcOwnl': Parameter.calcOwnl_forward,
@@ -127,7 +127,7 @@ if __name__=='__main__':
                 'enddate': symbolset.ix[i, 'enddate'],
                 'positionRatio':Parameter.positionRatio,
                 'initialCash':Parameter.initialCash,
-                'nextmonth':symbolset.ix[i,'nextmonth'],
+                #'nextmonth':symbolset.ix[i,'nextmonth'],
                 'commonForward':symbolset.ix[i,'commonForward'],
                 'calcDsl': symbolset.ix[i, 'calcDsl'],
                 'calcOwnl': symbolset.ix[i, 'calcOwnl'],
@@ -151,7 +151,8 @@ if __name__=='__main__':
         K_MIN = strategyParameter['K_MIN']
         startdate = strategyParameter['startdate']
         enddate = strategyParameter['enddate']
-        nextmonth = strategyParameter['nextmonth']
+        #nextmonth = strategyParameter['nextmonth']
+        nextmonth = enddate[:7]
         symbol = '.'.join([exchange_id, sec_id])
 
         positionRatio=strategyParameter['positionRatio']

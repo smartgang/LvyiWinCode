@@ -28,7 +28,7 @@ ownlTargetStart_close = 0.009
 ownltargetEnd_close = 0.010
 nolossThreshhold_close = 3
 #=============推进控制开关===================
-nextMonthName='Apr-18'
+#nextMonthName='18-05'
 forwardWinStart=1
 forwardWinEnd=12
 
@@ -47,6 +47,11 @@ ownlTargetStart_forward = 0.005
 ownltargetEnd_forward = 0.010
 #dsl_ownl set:dsl在前，ownl在后
 dsl_ownl_set=[[-0.022,0.009]]
+
+#==================每月参数计算=====================
+#newmonth='2018-05'#要生成参数的新月份
+month_n = 7 #n+x的n值，即往前推多少个月
+
 
 #===============多品种多周期优化参数=============================
 #多品种多周期优化开关，打开后代码会从下面标识的文件中导入参数

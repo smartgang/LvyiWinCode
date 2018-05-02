@@ -3,7 +3,7 @@ import multiTargetForward as mtf
 import pandas as pd
 import DATA_CONSTANTS as DC
 import os
-import Lvyi3MA_Parameter as Parameter
+import LvyiWin_Parameter as Parameter
 import numpy as np
 from datetime import datetime
 
