@@ -272,7 +272,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,
     finalSltSetList=[]#二维数据，每个一元素是一个多个止损目标的参数dic组合
     for sltpara in allSltSetList[0]:
         finalSltSetList.append([sltpara])
-    for i in range(1, ):
+    for i in range(1,len(allSltSetList)):
         tempset = allSltSetList[i]
         newset = []
         for o in finalSltSetList:
@@ -285,19 +285,19 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,
         newfolder=''
         for sltp in sltset:
             newfolder += (sltp['name']+'_%.3f' %(sltp['sltValue']))
-            try:
-                os.mkdir(newfolder)  # 创建文件夹
-            except:
-                pass
-            print (newfolder)
+        try:
+            os.mkdir(newfolder)  # 创建文件夹
+        except:
+            pass
+        print (newfolder)
         pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
         l = []
         for sn in range(0, paranum):
             setname = parasetlist.ix[sn, 'Setname']
-            l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
-                                       newfolder + '\\'))
-            #l.append(pool.apply_async(msl.multiStopLosslCal,
-            #                                  (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder + '\\')))
+            #l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
+            #                           newfolder + '\\'))
+            l.append(pool.apply_async(msl.multiStopLosslCal,
+                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder + '\\')))
         pool.close()
         pool.join()
 
@@ -455,7 +455,7 @@ if __name__=='__main__':
                 sltlist.append({'name':'frsl',
                                 'paralist':fixRateList,
                                 'folderPrefix':'FixRateStopLoss',
-                                'fileSuffix':'resultOWNL_by_tick.csv'})
+                                'fileSuffix':'resultFRSL_by_tick.csv'})
             getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash)
         else:
             if calcDsl:
