@@ -89,7 +89,7 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_dsl.csv')
 
-def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=True):
+def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
     symbol=symbolInfo.symbol
     ownlallresultdf = pd.DataFrame(
         columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
@@ -144,7 +144,7 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
     ownlallresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_ownl.csv')
 
 
-def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash):
+def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
     symbol=symbolInfo.symbol
     allresultdf = pd.DataFrame(
         columns=['setname', 'fixRate', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
@@ -175,10 +175,14 @@ def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,po
             l = []
             for a in range(numlist[n - 1], numlist[n]):
                 setname = parasetlist.ix[a, 'Setname']
-                #l.append(frsl.frslCal(strategyName,
-                #                                       symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\'))
-                l.append(pool.apply_async(frsl.frslCal, (strategyName,
-                                                       symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\')))
+                if not progress:
+                    #l.append(frsl.frslCal(strategyName,
+                    #                                       symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\'))
+                    l.append(pool.apply_async(frsl.frslCal, (strategyName,
+                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\')))
+                else:
+                    l.append(pool.apply_async(frsl.progressFrslCal, (strategyName,
+                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\')))
             pool.close()
             pool.join()
 
@@ -468,7 +472,7 @@ if __name__=='__main__':
                 getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress)
 
             if calcFrsl:
-                getFRSL(strategyName,symbolinfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash)
+                getFRSL(strategyName,symbolinfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress)
 
             if calcDslOwnl:
                 getDslOwnl(strategyName,symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash)
