@@ -239,14 +239,14 @@ def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchL
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_dsl_ownl.csv')
 
-def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,initialCash):
+def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash):
     '''
     计算多个止损策略结合回测的结果
     :param strategyName:
     :param symbolInfo:
     :param K_MIN:
     :param parasetlist:
-    :param SLTlist:
+    :param sltlist:
     :param positionRatio:
     :param initialCash:
     :return:
@@ -257,7 +257,6 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,
                  'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',])
     allnum=0
     paranum=parasetlist.shape[0]
-    sltnum=len(SLTlist)
     #先生成参数列表
     allSltSetList=[] #这是一个二维的参数列表，每一个元素是一个止损目标的参数dic列表
     for slt in sltlist:
@@ -313,8 +312,12 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,SLTlist,positionRatio,
         resultfilename = ("%s %s%d finalresult_multiSLT_%s.csv" % (strategyName,symbol, K_MIN, foldername))
         resultdf.to_csv(newfolder + '\\' + resultfilename)
 
+    allresultname=''
+    for slt in sltlist:
+        allresultname += slt['name']
     allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_multiSLT.csv')
+    #allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_multiSLT.csv')
+    allresultdf.to_csv("%s %s%d finalresult_multiSLT_%s.csv"%(strategyName,symbol,K_MIN,allresultname))
     pass
 
 if __name__=='__main__':
