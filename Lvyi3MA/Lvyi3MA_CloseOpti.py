@@ -257,7 +257,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
     '''
     symbol=symbolInfo.symbol
     allresultdf = pd.DataFrame(
-        columns=['setname', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
+        columns=['setname','slt', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
                  'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',])
     allnum=0
     paranum=parasetlist.shape[0]
@@ -300,12 +300,12 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
             #l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
             #                           newfolder + '\\'))
             l.append(pool.apply_async(msl.multiStopLosslCal,
-                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder + '\\')))
+                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder )))
         pool.close()
         pool.join()
 
         resultdf = pd.DataFrame(
-            columns=['setname', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe','old_Drawback',
+            columns=['setname','slt', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe','old_Drawback',
                      'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR'])
         i = 0
         for res in l:
