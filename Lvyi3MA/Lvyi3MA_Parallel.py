@@ -123,7 +123,7 @@ if __name__=='__main__':
             )
 
     allsymbolresult = pd.DataFrame(columns=
-                              ['Setname', 'MA_Short', 'MA_Mid', 'MA_Long', 'opentimes', 'end_cash', 'SR', 'Annual',
+                              ['Setname', 'opentimes', 'end_cash', 'SR', 'Annual',
                                'Sharpe', 'DrawBack','max_single_loss_rate',
                                'strategyName','exchange_id','sec_id','K_MIN'])
     for strategyParameter in strategyParameterSet:

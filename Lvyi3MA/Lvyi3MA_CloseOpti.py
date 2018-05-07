@@ -313,7 +313,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
             allresultdf.loc[allnum] = resultdf.loc[i]
             i += 1
             allnum+=1
-        resultfilename = ("%s %s%d finalresult_multiSLT_%s.csv" % (strategyName,symbol, K_MIN, foldername))
+        resultfilename = ("%s %s%d finalresult_multiSLT_%s.csv" % (strategyName,symbol, K_MIN, newfolder))
         resultdf.to_csv(newfolder + '\\' + resultfilename)
 
     allresultname=''
