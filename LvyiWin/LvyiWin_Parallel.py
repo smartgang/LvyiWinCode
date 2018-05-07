@@ -129,8 +129,8 @@ if __name__=='__main__':
             )
 
     allsymbolresult = pd.DataFrame(columns=
-                                   ['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N', 'opentimes', 'end_cash',
-                                    'SR', 'Annual', 'Sharpe', 'DrawBack', 'max_single_loss_rate',
+                              ['Setname', 'opentimes', 'end_cash', 'SR', 'Annual',
+                               'Sharpe', 'DrawBack','max_single_loss_rate',
                                'strategyName','exchange_id','sec_id','K_MIN'])
     for strategyParameter in strategyParameterSet:
         r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
