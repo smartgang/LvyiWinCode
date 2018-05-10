@@ -130,7 +130,7 @@ def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,ini
                                                                                                           symbolinfo,
                                                                                                           initialCash,
                                                                                                           positionRatio)
-
+    '''
         endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
         Sharpe = RS.sharpe_ratio(result)
@@ -150,7 +150,8 @@ def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,ini
         }
     closeopr = result.loc[:, 'closetime':'tradetype']
     return result, df, closeopr, results
-
+    '''
+    return result
 
 if __name__ == '__main__':
     #参数配置

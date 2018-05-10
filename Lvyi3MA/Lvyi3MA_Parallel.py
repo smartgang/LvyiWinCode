@@ -7,18 +7,20 @@ import pandas as pd
 import numpy as np
 import os
 import DATA_CONSTANTS as DC
+import ResultStatistics as RS
 import multiprocessing
 import Lvyi3MA_Parameter as Parameter
 
 
-def getResult(strategyName,symbolinfo,K_MIN,setname,rawdata,para,positionRatio,initialCash,contractswaplist):
-    result ,df ,closeopr,results = Lvyi3MAWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,positionRatio=positionRatio,initialCash=initialCash,contractswaplist=contractswaplist)
+def getResult(strategyName,symbolinfo,K_MIN,setname,rawdata,para,positionRatio,initialCash,contractswaplist,indexcols):
+    result = Lvyi3MAWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,positionRatio=positionRatio,initialCash=initialCash,contractswaplist=contractswaplist)
     result.to_csv(strategyName+' '+symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+    results=RS.getStatisticsResult(result,False,indexcols)
     del result
     print results
-    return results
+    return [setname]+results #在这里附上setname
 
-def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
+def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols):
 
     strategyName = strategyParameter['strategyName']
     exchange_id = strategyParameter['exchange_id']
@@ -50,11 +52,8 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
     # 多进程优化，启动一个对应CPU核心数量的进程池
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
-    resultlist = pd.DataFrame(columns=
-                              ['Setname', 'opentimes', 'end_cash', 'SR', 'Annual',
-                               'Sharpe', 'DrawBack',
-                               'max_single_loss_rate'])
-    for i in range(0, paranum):
+    resultlist = pd.DataFrame(columns=['Setname']+indexcols)
+    for i in range(0, 20):
         setname = parasetlist.ix[i, 'Setname']
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_mid = parasetlist.ix[i, 'MA_Mid']
@@ -65,15 +64,15 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
             'MA_Mid': ma_mid,
             'MA_Long': ma_long,
         }
-        #l.append(getResult(symbolInfo, K_MIN, setname, rawdata, paraset, swaplist))
-        l.append(pool.apply_async(getResult, (strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist)))
+        #l.append(getResult(strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist,indexcols))
+        l.append(pool.apply_async(getResult, (strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist,indexcols)))
     pool.close()
     pool.join()
 
     # 显示结果
     i = 0
     for res in l:
-        resultlist.loc[i] = res.get()
+        resultlist.loc[i] =res.get()
         i += 1
     #print resultlist
     finalresults = ("%s %s %d finalresults.csv" % (strategyName,symbol, K_MIN))
@@ -88,6 +87,12 @@ if __name__=='__main__':
     # 取参数集
     parasetlist = pd.read_csv(resultpath + Parameter.parasetname)
     paranum = parasetlist.shape[0]
+
+    #indexcols
+    indexcols=Parameter.ResultIndexDic
+    #for d, f in Parameter.ResultIndexDic.items():
+    #    if f:indexcols.append(d)
+
     #参数设置
     strategyParameterSet=[]
     if not Parameter.symbol_KMIN_opt_swtich:
@@ -121,13 +126,10 @@ if __name__=='__main__':
                 'initialCash' : Parameter.initialCash
             }
             )
-
-    allsymbolresult = pd.DataFrame(columns=
-                              ['Setname', 'opentimes', 'end_cash', 'SR', 'Annual',
-                               'Sharpe', 'DrawBack','max_single_loss_rate',
-                               'strategyName','exchange_id','sec_id','K_MIN'])
+    allsymbolresult_cols=['Setname']+indexcols+[ 'strategyName','exchange_id','sec_id','K_MIN']
+    allsymbolresult = pd.DataFrame(columns=allsymbolresult_cols)
     for strategyParameter in strategyParameterSet:
-        r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
+        r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols)
         r['strategyName']=strategyParameter['strategyName']
         r['exchange_id']=strategyParameter['exchange_id']
         r['sec_id'] = strategyParameter['sec_id']
