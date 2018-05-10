@@ -4,6 +4,7 @@ import DynamicStopLoss as dsl
 import OnceWinNoLoss as ownl
 import FixRateStopLoss as frsl
 import DslOwnlClose as dslownl
+import MultiStopLoss as msl
 import DATA_CONSTANTS as DC
 import pandas as pd
 import os
@@ -33,15 +34,15 @@ def bar1mPrepare(bar1m):
     bar['low']=bar1m['low']
     return bar
 
-def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
+def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,positionRatio,initialCash,indexcols,progress=False):
     symbol=symbolInfo.symbol
     pricetick=symbolInfo.getPriceTick()
-    slip=symbolInfo.getSlip()
-    allresultdf = pd.DataFrame(
-        columns=['setname', 'slTarget', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                 'old_SR',
-                 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
-                 'maxSingleLoss'])
+    new_indexcols=[]
+    for i in indexcols:
+        new_indexcols.append('new_'+i)
+    allresultdf_cols=['setname','slTarget','worknum']+indexcols+new_indexcols
+    allresultdf = pd.DataFrame(columns=allresultdf_cols)
+
     allnum = 0
     paranum=parasetlist.shape[0]
     for stoplossTarget in stoplossList:
@@ -54,10 +55,7 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
             pass
         print ("stoplossTarget:%f" % stoplossTarget)
 
-        resultdf = pd.DataFrame(
-            columns=['setname', 'slTarget', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                     'old_SR',
-                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR', 'maxSingleLoss'])
+        resultdf = pd.DataFrame(columns=allresultdf_cols)
         setnum = 0
         numlist = range(0, paranum, 100)
         numlist.append(paranum)
@@ -68,10 +66,10 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
                 setname = parasetlist.ix[a, 'Setname']
                 if not progress:
                     l.append(pool.apply_async(dsl.dslCal, (strategyName,
-                                                           symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
+                                                       symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\',indexcols)))
                 else:
                     l.append(pool.apply_async(dsl.progressDslCal, (strategyName,
-                                                           symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\')))
+                                                       symbolInfo, K_MIN, setname, bar1m, barxm, pricetick, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\',indexcols)))
             pool.close()
             pool.join()
 
@@ -80,18 +78,19 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
                 allresultdf.loc[allnum] = resultdf.loc[setnum]
                 setnum += 1
                 allnum += 1
-        resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
+        #resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
         resultdf.to_csv(dslFolderName + '\\' + strategyName+' '+symbol + str(K_MIN) + ' finalresult_dsl' + str(stoplossTarget) + '.csv')
 
-    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_dsl.csv')
 
-def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
+def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,indexcols,progress=False):
     symbol=symbolInfo.symbol
-    ownlallresultdf = pd.DataFrame(
-        columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                 'old_SR',
-                 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR','maxSingleLoss'])
+    new_indexcols=[]
+    for i in indexcols:
+        new_indexcols.append('new_'+i)
+    allresultdf_cols = ['setname', 'winSwitch', 'worknum'] + indexcols + new_indexcols
+    ownlallresultdf = pd.DataFrame(columns=allresultdf_cols)
     allnum=0
     paranum=parasetlist.shape[0]
     for winSwitch in winSwitchList:
@@ -103,9 +102,7 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
             pass
         print ("OnceWinNoLoss WinSwitch:%f" % winSwitch)
 
-        ownlresultdf = pd.DataFrame(
-            columns=['setname', 'winSwitch', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                     'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR','maxSingleLoss'])
+        ownlresultdf = pd.DataFrame(columns=allresultdf_cols)
 
         setnum = 0
         numlist = range(0, paranum, 100)
@@ -131,20 +128,19 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
                 ownlallresultdf.loc[allnum] = ownlresultdf.loc[setnum]
                 setnum += 1
                 allnum += 1
-        ownlresultdf['cashDelta'] = ownlresultdf['new_endcash'] - ownlresultdf['old_endcash']
+        #ownlresultdf['cashDelta'] = ownlresultdf['new_endcash'] - ownlresultdf['old_endcash']
         ownlresultdf.to_csv(ownlFolderName + '\\' +strategyName+' '+ symbol + str(K_MIN) + ' finalresult_ownl' + str(winSwitch) + '.csv')
 
-    ownlallresultdf['cashDelta'] = ownlallresultdf['new_endcash'] - ownlallresultdf['old_endcash']
+    #ownlallresultdf['cashDelta'] = ownlallresultdf['new_endcash'] - ownlallresultdf['old_endcash']
     ownlallresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_ownl.csv')
 
 
-def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress=False):
+def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,indexcols,progress=False):
     symbol=symbolInfo.symbol
-    allresultdf = pd.DataFrame(
-        columns=['setname', 'fixRate', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                 'old_SR',
-                 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',
-                 'maxSingleLoss'])
+    new_indexcols=[]
+    for i in indexcols:
+        new_indexcols.append('new_'+i)
+    allresultdf = pd.DataFrame(columns=['setname', 'fixRate', 'worknum']+indexcols+new_indexcols)
     allnum = 0
     paranum=parasetlist.shape[0]
     for fixRateTarget in fixRateList:
@@ -157,10 +153,7 @@ def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,po
             pass
         print ("fixRateTarget:%f" % fixRateTarget)
 
-        resultdf = pd.DataFrame(
-            columns=['setname', 'fixRate', 'worknum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                     'old_SR',
-                     'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR', 'maxSingleLoss'])
+        resultdf = pd.DataFrame(columns=['setname', 'fixRate', 'worknum']+indexcols+new_indexcols)
         setnum = 0
         numlist = range(0, paranum, 100)
         numlist.append(paranum)
@@ -185,13 +178,13 @@ def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,po
                 allresultdf.loc[allnum] = resultdf.loc[setnum]
                 setnum += 1
                 allnum += 1
-        resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
+        #resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
         resultdf.to_csv(folderName + '\\' + strategyName+' '+symbol + str(K_MIN) + ' finalresult_frsl' + str(fixRateTarget) + '.csv')
 
-    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+' finalresult_frsl.csv')
 
-def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash):
+def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash,indexcols):
     symbol=symbolInfo.symbol
     allresultdf = pd.DataFrame(
         columns=['setname', 'dslTarget', 'ownlWinSwtich', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
@@ -234,10 +227,10 @@ def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchL
             resultfilename = ("%s %s%d finalresult_dsl%.3f_ownl%.3f.csv" % (strategyName,symbol, K_MIN, stoplossTarget, winSwitch))
             resultdf.to_csv(newfolder + '\\' + resultfilename)
 
-    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
+    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_dsl_ownl.csv')
 
-def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash):
+def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash,indexcols):
     '''
     计算多个止损策略结合回测的结果
     :param strategyName:
@@ -250,9 +243,12 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
     :return:
     '''
     symbol=symbolInfo.symbol
-    allresultdf = pd.DataFrame(
-        columns=['setname','slt', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe', 'old_Drawback',
-                 'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR',])
+    new_indexcols=[]
+    for i in indexcols:
+        new_indexcols.append('new_'+i)
+    allresultdf_cols=['setname','slt','slWorkNum']+indexcols+new_indexcols
+    allresultdf = pd.DataFrame(columns=allresultdf_cols)
+
     allnum=0
     paranum=parasetlist.shape[0]
     #先生成参数列表
@@ -298,9 +294,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
         pool.close()
         pool.join()
 
-        resultdf = pd.DataFrame(
-            columns=['setname','slt', 'slWorkNum', 'old_endcash', 'old_Annual', 'old_Sharpe','old_Drawback',
-                     'old_SR', 'new_endcash', 'new_Annual', 'new_Sharpe', 'new_Drawback', 'new_SR'])
+        resultdf = pd.DataFrame(columns=allresultdf_cols)
         i = 0
         for res in l:
             resultdf.loc[i] = res.get()
@@ -313,8 +307,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
     allresultname=''
     for slt in sltlist:
         allresultname += slt['name']
-    allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
-    #allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_multiSLT.csv')
+    #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv("%s %s%d finalresult_multiSLT_%s.csv"%(strategyName,symbol,K_MIN,allresultname))
     pass
 
@@ -326,6 +319,9 @@ if __name__=='__main__':
     # 取参数集
     parasetlist = pd.read_csv(resultpath + Parameter.parasetname)
     paranum = parasetlist.shape[0]
+
+    #indexcols
+    indexcols=Parameter.ResultIndexDic
 
     # 参数设置
     strategyParameterSet = []
@@ -457,16 +453,16 @@ if __name__=='__main__':
                                 'paralist':fixRateList,
                                 'folderPrefix':'FixRateStopLoss',
                                 'fileSuffix':'resultFRSL_by_tick.csv'})
-            getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash)
+            getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash,indexcols)
         else:
             if calcDsl:
-                getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash,progress)
+                getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash,indexcols,progress)
 
             if calcOwnl:
-                getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,progress)
+                getOwnl(strategyName,symbolinfo,K_MIN,winSwitchList,nolossThreshhold,parasetlist,bar1m,barxm,positionRatio,initialCash,indexcols,progress)
 
             if calcFrsl:
-                getFRSL(strategyName,symbolinfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,progress)
+                getFRSL(strategyName,symbolinfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,positionRatio,initialCash,indexcols,progress)
 
             if calcDslOwnl:
-                getDslOwnl(strategyName,symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash)
+                getDslOwnl(strategyName,symbolinfo,K_MIN,parasetlist,stoplossList,winSwitchList,positionRatio,initialCash,indexcols)

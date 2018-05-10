@@ -186,7 +186,7 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
     if calcResult:
         result['commission_fee'], result['per earn'], result['own cash'],result['hands'] = RS.calcResult(result, symbolinfo,
                                                                                          initialCash, positionRatio)
-
+        '''
         endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
         Sharpe = RS.sharpe_ratio(result)
@@ -207,7 +207,8 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
     closeopr=result.loc[:,'closetime':'tradetype']
 
     return result,df,closeopr,results
-
+    '''
+    return result
 if __name__ == '__main__':
     ini_file = 'LvyiWinConfig.ini'
     conf=ConfigParser.ConfigParser()

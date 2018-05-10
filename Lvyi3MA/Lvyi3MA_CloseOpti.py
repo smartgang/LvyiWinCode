@@ -44,8 +44,7 @@ def getDSL(strategyName,symbolInfo,K_MIN,stoplossList,parasetlist,bar1m,barxm,po
     allresultdf = pd.DataFrame(columns=allresultdf_cols)
 
     allnum = 0
-    #paranum=parasetlist.shape[0]
-    paranum = 20
+    paranum=parasetlist.shape[0]
     for stoplossTarget in stoplossList:
 
         dslFolderName = "DynamicStopLoss" + str(stoplossTarget * 1000)
@@ -96,8 +95,7 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
     allresultdf_cols = ['setname', 'winSwitch', 'worknum'] + indexcols + new_indexcols
     ownlallresultdf = pd.DataFrame(columns=allresultdf_cols)
     allnum=0
-    #paranum=parasetlist.shape[0]
-    paranum = 20
+    paranum=parasetlist.shape[0]
     for winSwitch in winSwitchList:
         ownlFolderName = "OnceWinNoLoss" + str(winSwitch * 1000)
         try:

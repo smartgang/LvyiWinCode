@@ -7,18 +7,20 @@ import pandas as pd
 import numpy as np
 import os
 import DATA_CONSTANTS as DC
+import ResultStatistics as RS
 import multiprocessing
 import LvyiWin_Parameter as Parameter
 
 
-def getResult(strategyName,symbolinfo,K_MIN,setname,rawdata,para,positionRatio,initialCash,contractswaplist):
-    result ,df ,closeopr,results = LvyiWin.LvyiWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,positionRatio=positionRatio,initialCash=initialCash,contractswaplist=contractswaplist)
+def getResult(strategyName,symbolinfo,K_MIN,setname,rawdata,para,positionRatio,initialCash,contractswaplist,indexcols):
+    result = LvyiWin.LvyiWin(symbolinfo=symbolinfo,rawdata=rawdata, paraset=para,positionRatio=positionRatio,initialCash=initialCash,contractswaplist=contractswaplist)
     result.to_csv(strategyName+' '+symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+    results=RS.getStatisticsResult(result,False,indexcols)
     del result
     print results
-    return results
+    return [setname]+results #在这里附上setname
 
-def getParallelResult(strategyParameter,resultpath,parasetlist,paranum):
+def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols):
 
     strategyName = strategyParameter['strategyName']
     exchange_id = strategyParameter['exchange_id']
