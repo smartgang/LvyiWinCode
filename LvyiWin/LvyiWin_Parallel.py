@@ -52,9 +52,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols
     # 多进程优化，启动一个对应CPU核心数量的进程池
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
-    resultlist = pd.DataFrame(columns=
-                              ['Setname', 'opentimes', 'end_cash',
-                               'SR', 'Annual', 'Sharpe', 'DrawBack', 'max_single_loss_rate'])
+    resultlist = pd.DataFrame(columns=['Setname']+indexcols)
     for i in range(0, paranum):
         setname = parasetlist.ix[i, 'Setname']
         kdj_n = parasetlist.ix[i, 'KDJ_N']
@@ -72,8 +70,8 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols
             'MA_Short': ma_short,
             'MA_Long': ma_long,
         }
-        #l.append(getResult(symbolInfo, K_MIN, setname, rawdata, paraset, swaplist))
-        l.append(pool.apply_async(getResult, (strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist)))
+        #l.append(getResult(strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist,indexcols))
+        l.append(pool.apply_async(getResult, (strategyName,symbolInfo, K_MIN, setname, rawdata, paraset, positionRatio,initialCash,swaplist,indexcols)))
     pool.close()
     pool.join()
 
@@ -96,6 +94,12 @@ if __name__=='__main__':
     # 取参数集
     parasetlist = pd.read_csv(resultpath + Parameter.parasetname)
     paranum = parasetlist.shape[0]
+
+    #indexcols
+    indexcols=Parameter.ResultIndexDic
+    #for d, f in Parameter.ResultIndexDic.items():
+    #    if f:indexcols.append(d)
+
     #参数设置
     strategyParameterSet=[]
     if not Parameter.symbol_KMIN_opt_swtich:
@@ -129,13 +133,10 @@ if __name__=='__main__':
                 'initialCash' : Parameter.initialCash
             }
             )
-
-    allsymbolresult = pd.DataFrame(columns=
-                              ['Setname', 'opentimes', 'end_cash', 'SR', 'Annual',
-                               'Sharpe', 'DrawBack','max_single_loss_rate',
-                               'strategyName','exchange_id','sec_id','K_MIN'])
+    allsymbolresult_cols=['Setname']+indexcols+[ 'strategyName','exchange_id','sec_id','K_MIN']
+    allsymbolresult = pd.DataFrame(columns=allsymbolresult_cols)
     for strategyParameter in strategyParameterSet:
-        r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum)
+        r=getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols)
         r['strategyName']=strategyParameter['strategyName']
         r['exchange_id']=strategyParameter['exchange_id']
         r['sec_id'] = strategyParameter['sec_id']
