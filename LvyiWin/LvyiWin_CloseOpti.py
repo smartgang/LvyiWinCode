@@ -115,11 +115,11 @@ def getOwnl(strategyName,symbolInfo,K_MIN,winSwitchList,nolossThreshhold,paraset
                 if not progress:
                     l.append(pool.apply_async(ownl.ownlCal,
                                               (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
-                                               ownlFolderName + '\\')))
+                                               ownlFolderName + '\\',indexcols)))
                 else:
                     l.append(pool.apply_async(ownl.progressOwnlCal,
                                               (strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, winSwitch, nolossThreshhold, positionRatio,initialCash,
-                                               ownlFolderName + '\\')))
+                                               ownlFolderName + '\\',indexcols)))
             pool.close()
             pool.join()
 
@@ -166,10 +166,10 @@ def getFRSL(strategyName,symbolInfo,K_MIN,fixRateList,parasetlist,bar1m,barxm,po
                     #l.append(frsl.frslCal(strategyName,
                     #                                       symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\'))
                     l.append(pool.apply_async(frsl.frslCal, (strategyName,
-                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\')))
+                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\',indexcols)))
                 else:
                     l.append(pool.apply_async(frsl.progressFrslCal, (strategyName,
-                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\')))
+                                                           symbolInfo, K_MIN, setname, bar1m, barxm, fixRateTarget, positionRatio,initialCash, folderName + '\\',indexcols)))
             pool.close()
             pool.join()
 
@@ -290,7 +290,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
             #l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
             #                           newfolder + '\\'))
             l.append(pool.apply_async(msl.multiStopLosslCal,
-                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder )))
+                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder,indexcols)))
         pool.close()
         pool.join()
 
