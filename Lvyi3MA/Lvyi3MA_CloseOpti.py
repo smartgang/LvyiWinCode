@@ -236,7 +236,7 @@ def getDslOwnl(strategyName,symbolInfo,K_MIN,parasetlist,stoplossList,winSwitchL
     #allresultdf['cashDelta'] = allresultdf['new_endcash'] - allresultdf['old_endcash']
     allresultdf.to_csv(strategyName+' '+symbol + str(K_MIN)+ ' finalresult_dsl_ownl.csv')
 
-def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash,indexcols):
+def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,barxm,sltlist,positionRatio,initialCash,indexcols):
     '''
     计算多个止损策略结合回测的结果
     :param strategyName:
@@ -257,6 +257,9 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
 
     allnum=0
     paranum=parasetlist.shape[0]
+
+    dailyK=DC.generatDailyClose(barxm)
+
     #先生成参数列表
     allSltSetList=[] #这是一个二维的参数列表，每一个元素是一个止损目标的参数dic列表
     for slt in sltlist:
@@ -296,7 +299,7 @@ def getMultiSLT(strategyName,symbolInfo,K_MIN,parasetlist,sltlist,positionRatio,
             #l.append(msl.multiStopLosslCal(strategyName, symbolInfo, K_MIN, setname, sltset, positionRatio, initialCash,
             #                           newfolder + '\\'))
             l.append(pool.apply_async(msl.multiStopLosslCal,
-                                              (strategyName,symbolInfo, K_MIN,setname, sltset, positionRatio,initialCash,newfolder,indexcols )))
+                                              (strategyName,symbolInfo, K_MIN,setname, sltset,dailyK, positionRatio,initialCash,newfolder,indexcols)))
         pool.close()
         pool.join()
 
@@ -459,7 +462,7 @@ if __name__=='__main__':
                                 'paralist':fixRateList,
                                 'folderPrefix':'FixRateStopLoss',
                                 'fileSuffix':'resultFRSL_by_tick.csv'})
-            getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,sltlist,positionRatio,initialCash,indexcols)
+            getMultiSLT(strategyName,symbolinfo,K_MIN,parasetlist,barxm,sltlist,positionRatio,initialCash,indexcols)
         else:
             if calcDsl:
                 getDSL(strategyName,symbolinfo, K_MIN, stoplossList, parasetlist, bar1m,barxm,positionRatio,initialCash,indexcols,progress)
