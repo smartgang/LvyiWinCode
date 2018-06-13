@@ -7,8 +7,8 @@
 import pandas as pd
 import numpy as np
 import MA
-import DMI
-import KDJ
+#import DMI
+#import KDJ
 import DATA_CONSTANTS as DC
 import ConfigParser
 import ResultStatistics as RS
@@ -33,13 +33,13 @@ def removeContractSwap(resultlist, contractswaplist):
     return results
 
 
-def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,initialCash,calcResult=True):
+#def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,initialCash,calcResult=True):
+def Lvyi3MAWin(symbolinfo, rawdata, paraset):
     setname = paraset['Setname']
-    print setname
     MA_Short = paraset['MA_Short']
     MA_Mid = paraset['MA_Mid']
     MA_Long = paraset['MA_Long']
-
+    rawdata['Unnamed: 0'] = range(rawdata.shape[0])
     beginindex = rawdata.ix[0, 'Unnamed: 0']
 
     #df_MA = MA.MA(rawdata['close'], MA_Short, MA_Mid)
@@ -117,7 +117,8 @@ def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,ini
     result = result.reset_index(drop=True)
     result.drop(result.shape[0] - 1, inplace=True)
     # 去掉跨合约的操作
-    result = removeContractSwap(result, contractswaplist)
+    # 使用单合约，不用再去掉跨合约
+    #result = removeContractSwap(result, contractswaplist)
 
     slip = symbolinfo.getSlip()
 
@@ -125,12 +126,14 @@ def Lvyi3MAWin(symbolinfo, rawdata, paraset, contractswaplist, positionRatio,ini
     result['ret_r'] = result['ret'] / result['openprice']
     results = {}
 
+    '''
+    # 使用单合约，策略核心内不再计算结果
     if calcResult:
         result['commission_fee'], result['per earn'], result['own cash'], result['hands'] = RS.calcResult(result,
                                                                                                           symbolinfo,
                                                                                                           initialCash,
                                                                                                           positionRatio)
-    '''
+    
         endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
         Sharpe = RS.sharpe_ratio(result)

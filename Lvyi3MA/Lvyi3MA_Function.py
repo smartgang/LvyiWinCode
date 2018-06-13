@@ -12,10 +12,11 @@ def calDailyReturn():
     enddate = '2018-04-30'
     symbol = 'SHFE.RB'
     K_MIN = 3600
-    symbolinfo = DC.SymbolInfo(symbol)
+    symbolinfo = DC.SymbolInfo(symbol, startdate, enddate)
     strategyName = Parameter.strategyName
-    rawdata = DC.getBarData(symbol, K_MIN, startdate + ' 00:00:00', enddate + ' 23:59:59').reset_index(drop=True)
-    dailyK = DC.generatDailyClose(rawdata)
+    #rawdata = DC.getBarData(symbol, K_MIN, startdate + ' 00:00:00', enddate + ' 23:59:59').reset_index(drop=True)
+    #dailyK = DC.generatDailyClose(rawdata)
+    bardic = DC.getBarBySymbolList(symbol, symbolinfo.getSymbolList(), K_MIN, startdate, enddate)
 
     upperpath=DC.getUpperPath(Parameter.folderLevel)
     resultpath = upperpath + Parameter.resultFolderName
@@ -37,10 +38,14 @@ def calDailyReturn():
     for i in range(paranum):
         setname = parasetlist.ix[i, 'Setname']
         print setname
-        oprdf=pd.read_csv(strategyName + ' ' + symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' '+filesuffix)
+        oprdf=pd.read_csv(strategyName + ' ' + symbolinfo.domain_symbol + str(K_MIN) + ' ' + setname + ' '+filesuffix)
+        symbolDomainDic = symbolinfo.amendSymbolDomainDicByOpr(oprdf)
+        bars = DC.getDomainbarByDomainSymbol(symbolinfo.getSymbolList(), bardic, symbolDomainDic)
+        dailyK = DC.generatDailyClose(bars)
+
         dR=RS.dailyReturn(symbolinfo,oprdf,dailyK,Parameter.initialCash)
         dR.calDailyResult()
-        dR.dailyClose.to_csv(strategyName + ' ' + symbolinfo.symbol + str(K_MIN) + ' ' + setname + ' daily'+filesuffix)
+        dR.dailyClose.to_csv(strategyName + ' ' + symbolinfo.domain_symbol + str(K_MIN) + ' ' + setname + ' daily'+filesuffix)
 
         results = RS.getStatisticsResult(oprdf, False, indexcols, dR.dailyClose)
         print results
