@@ -11,6 +11,33 @@ import os
 import numpy as np
 import multiprocessing
 import Lvyi3MA_Parameter as Parameter
+import time
+def bar1mPrepare(bar1m):
+    bar1m['longHigh'] = bar1m['high']
+    bar1m['shortHigh'] = bar1m['high']
+    bar1m['longLow'] = bar1m['low']
+    bar1m['shortLow'] = bar1m['low']
+    bar1m['highshift1'] = bar1m['high'].shift(1).fillna(0)
+    bar1m['lowshift1'] = bar1m['low'].shift(1).fillna(0)
+    bar1m.loc[bar1m['open'] < bar1m['close'], 'longHigh'] = bar1m['highshift1']
+    bar1m.loc[bar1m['open'] > bar1m['close'], 'shortLow'] = bar1m['lowshift1']
+    #bar1m['Unnamed: 0'] = range(bar1m.shape[0])
+
+    """
+    bar=pd.DataFrame()
+    bar['longHigh']=bar1m['longHigh']
+    bar['longLow']=bar1m['longLow']
+    bar['shortHigh']=bar1m['shortHigh']
+    bar['shortLow']=bar1m['shortLow']
+    bar['strtime']=bar1m['strtime']
+    bar['utc_time']=bar1m['utc_time']
+    #bar['Unnamed: 0']=bar1m['Unnamed: 0']
+    bar['Unnamed: 0'] = range(bar1m.shape[0])
+    bar['high']=bar1m['high']
+    bar['low']=bar1m['low']
+    return bar
+    """
+    return bar1m
 
 
 def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic, barxmdic, positionRatio, initialCash, indexcols, progress=False):
@@ -35,18 +62,52 @@ def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic,
 
         resultdf = pd.DataFrame(columns=allresultdf_cols)
         setnum = 0
-        numlist = range(0, paranum, 100)
+        numlist = range(0, paranum, 30)
         numlist.append(paranum)
         for n in range(1, len(numlist)):
+
+            oprdflist= []
+            bar1mlist= []
+            barxmlist= []
+            timestart = time.time()
+            for a in range(numlist[n - 1], numlist[n]):
+                #timedatastart = time.time()
+                setname = parasetlist.ix[a, 'Setname']
+                oprdf = pd.read_csv(strategyName + ' ' + symbol + str(K_MIN) + ' ' + setname + ' result.csv')
+                #timeopr = time.time()
+                #print ("oprtime %.3f" % (timeopr-timedatastart))
+                symbolDomainDic = symbolInfo.amendSymbolDomainDicByOpr(oprdf)
+                #timeamend = time.time()
+                #print ("amendtime %.3f" % (timeamend - timeopr))
+                bar1m = DC.getDomainbarByDomainSymbol(symbolInfo.getSymbolList(), bar1mdic, symbolDomainDic)
+                #timebar1m = time.time()
+                #print("bar1mtime %.3f"% (timebar1m-timeamend))
+                bar1m = bar1mPrepare(bar1m)
+                #timepre1m = time.time()
+                #print ("preparetime %.3f"%(timepre1m - timebar1m))
+                barxm = DC.getDomainbarByDomainSymbol(symbolInfo.getSymbolList(), barxmdic, symbolDomainDic)
+                #barxmtime = time.time()
+                #print ("barxmtime %.3f" % (barxmtime-timepre1m))
+                oprdflist.append(oprdf)
+                bar1mlist.append(bar1m)
+                barxmlist.append(barxm)
+                #print ("%s data prepared!"%setname)
+
+            timedata = time.time()
+            print ("total time of data prepare:%.2f" % (timedata - timestart))
+            cn=multiprocessing.cpu_count()
+            print ("cn%d" % cn)
             pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
             l = []
+            a0=numlist[n-1]
             for a in range(numlist[n - 1], numlist[n]):
                 setname = parasetlist.ix[a, 'Setname']
                 if not progress:
-                    # l.append(dsl.dslCal(strategyName,symbolInfo, K_MIN, setname, bar1mdic, barxmdic, positionRatio,initialCash,stoplossTarget, dslFolderName + '\\',indexcols))
-                    l.append(pool.apply_async(dsl.dslCal, (strategyName,
-                                                           symbolInfo, K_MIN, setname, bar1mdic, barxmdic, positionRatio, initialCash, stoplossTarget, dslFolderName + '\\',
-                                                           indexcols)))
+                    l.append(dsl.dslCal(strategyName,symbolInfo, K_MIN, setname, oprdflist[a-a0], bar1mlist[a-a0], barxmlist[a-a0], positionRatio, initialCash, stoplossTarget, dslFolderName + '\\',
+                                                           indexcols))
+                    #l.append(pool.apply_async(dsl.dslCal, (strategyName,
+                    #                                       symbolInfo, K_MIN, setname, oprdflist[a-a0], bar1mlist[a-a0], barxmlist[a-a0], positionRatio, initialCash, stoplossTarget, dslFolderName + '\\',
+                    #                                       indexcols)))
                 else:
                     # l.append(dsl.progressDslCal(strategyName,symbolInfo, K_MIN, setname, bar1m, barxm, pricetick,
                     #                                               positionRatio, initialCash, stoplossTarget,
@@ -56,7 +117,8 @@ def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic,
                                                                    indexcols)))
             pool.close()
             pool.join()
-
+            timeend = time.time()
+            print ("totaol time of oen set:%.2f" %(timeend-timestart))
             for res in l:
                 resultdf.loc[setnum] = res.get()
                 allresultdf.loc[allnum] = resultdf.loc[setnum]
@@ -427,8 +489,11 @@ if __name__ == '__main__':
         # barxm=DC.getBarData(symbol=symbol,K_MIN=K_MIN,starttime=startdate+' 00:00:00',endtime=enddate+' 23:59:59')
         # bar1m计算longHigh,longLow,shortHigh,shortLow
         # bar1m=bar1mPrepare(bar1m)
-        bar1mdic = DC.getBarBySymbolList(domain_symbol, symbolinfo.getSymbolList(), 60, startdate, enddate)
-        barxmdic = DC.getBarBySymbolList(domain_symbol, symbolinfo.getSymbolList(), K_MIN, startdate, enddate)
+        #bar1mdic = DC.getBarBySymbolList(domain_symbol, symbolinfo.getSymbolList(), 60, startdate, enddate)
+        #barxmdic = DC.getBarBySymbolList(domain_symbol, symbolinfo.getSymbolList(), K_MIN, startdate, enddate)
+        bar1mdic = DC.getBarDic(symbolinfo, 60)
+        barxmdic = DC.getBarDic(symbolinfo, K_MIN)
+
 
         if calcMultiSLT:
             sltlist = []

@@ -11,7 +11,7 @@ import numpy as np
 
 def getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
                resultfilesuffix):
-    symbol = symbolinfo.symbol
+    symbol = symbolinfo.domain_symbol
     forwordresultpath = rawdatapath + '\\ForwardResults\\'
     forwardrankpath = rawdatapath + '\\ForwardRank\\'
     monthlist = [datetime.strftime(x, '%Y-%m') for x in list(pd.date_range(start=startdate, end=enddate, freq='M'))]
@@ -218,7 +218,7 @@ if __name__ == '__main__':
         positionRatio = strategyParameter['positionRatio']
         initialCash = strategyParameter['initialCash']
 
-        symbolinfo = DC.SymbolInfo(symbol)
+        symbolinfo = DC.SymbolInfo(symbol, startdate, enddate)
         slip = DC.getSlip(symbol)
         pricetick = DC.getPriceTick(symbol)
 

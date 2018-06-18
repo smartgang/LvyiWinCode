@@ -15,9 +15,9 @@ initialCash = 200000  # 起始资金
 
 # =============止损控制开关===================
 progress_close = False
-calcDsl_close = False
-calcOwnl_close = True
-calcFrsl_close = True
+calcDsl_close = True
+calcOwnl_close = False
+calcFrsl_close = False
 calcMultiSLT_close = False
 calcDslOwnl_close = False
 # dsl参数
@@ -39,10 +39,10 @@ forwardWinStart = 1
 forwardWinEnd = 12
 
 # 止损类型开关
-multiSTL_forward = True  # 多止损混合推进开关（忽略common模式）
+multiSTL_forward = False  # 多止损混合推进开关（忽略common模式）
 common_forward = False  # 普通回测结果推进
-calcDsl_forward = True
-calcOwnl_forward = False
+calcDsl_forward = False
+calcOwnl_forward = True
 calsFrsl_forward = True
 calcDslOwnl_forward = False
 # dsl参数

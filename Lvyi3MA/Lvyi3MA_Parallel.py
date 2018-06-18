@@ -10,7 +10,7 @@ import DATA_CONSTANTS as DC
 import ResultStatistics as RS
 import multiprocessing
 import Lvyi3MA_Parameter as Parameter
-
+import time
 
 def getResult(strategyName, symbolinfo, K_MIN, setname, rawdataDic, para, positionRatio, initialCash, indexcols):
     symbollist = symbolinfo.getSymbolList()
@@ -92,11 +92,12 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
     except:
         print ("%s folder already exsist!" % foldername)
     os.chdir(foldername)
-
+    timestart = time.time()
     # 多进程优化，启动一个对应CPU核心数量的进程池
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     resultlist = pd.DataFrame(columns=['Setname'] + indexcols)
+
     for i in range(0, paranum):
         setname = parasetlist.ix[i, 'Setname']
         ma_short = parasetlist.ix[i, 'MA_Short']
@@ -112,7 +113,8 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
         l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols)))
     pool.close()
     pool.join()
-
+    timeend = time.time()
+    print ("total time %.2f" % (timeend - timestart))
     # 显示结果
     i = 0
     for res in l:
