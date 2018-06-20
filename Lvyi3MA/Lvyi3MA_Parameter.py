@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 策略参数设置
-'''
+"""
 # 参数设置
 strategyName = 'Lvyi3MAWin'
 exchange_id = 'SHFE'
@@ -15,24 +15,24 @@ initialCash = 200000  # 起始资金
 
 # =============止损控制开关===================
 progress_close = False
-calcDsl_close = True
+calcDsl_close = False
 calcOwnl_close = False
-calcFrsl_close = False
+calcFrsl_close = True
 calcMultiSLT_close = False
 calcDslOwnl_close = False
 # dsl参数
 dslStep_close = -0.002
 dslTargetStart_close = -0.018
-dslTargetEnd_close = -0.019
+dslTargetEnd_close = -0.024
 # ownl参数
 ownlStep_close = 0.001
 ownlTargetStart_close = 0.009
-ownltargetEnd_close = 0.010
+ownltargetEnd_close = 0.01
 nolossThreshhold_close = 3
 # frsl参数
 frslStep_close = -0.001
-frslTargetStart_close = -0.010
-frslTragetEnd_close = -0.011
+frslTargetStart_close = -0.009
+frslTragetEnd_close = -0.01
 # =============推进控制开关===================
 # nextMonthName='18-05'
 forwardWinStart = 1
@@ -52,7 +52,7 @@ dslTargetEnd_forward = -0.021
 # ownl参数
 ownlStep_forward = 0.001
 ownlTargetStart_forward = 0.009
-ownltargetEnd_forward = 0.011
+ownltargetEnd_forward = 0.01
 # frsl参数
 frslStep_forward = -0.001
 frslTargetStart_forward = -0.010

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 '''
 Lvyi3MAWin策略多进程参数优化
 '''
@@ -12,7 +12,9 @@ import multiprocessing
 import Lvyi3MA_Parameter as Parameter
 import time
 
-def getResult(strategyName, symbolinfo, K_MIN, setname, rawdataDic, para, positionRatio, initialCash, indexcols):
+def getResult(strategyName, symbolinfo, K_MIN, setname, rawdataDic, para, positionRatio, initialCash, indexcols,timestart):
+    time1 = time.time()
+    print ("%s Enter %.3f" % (setname, time1-timestart))
     symbollist = symbolinfo.getSymbolList()
     symbolDomainDic = symbolinfo.getSymbolDomainDic()
     result = pd.DataFrame()
@@ -98,7 +100,7 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
     l = []
     resultlist = pd.DataFrame(columns=['Setname'] + indexcols)
 
-    for i in range(0, paranum):
+    for i in range(0, 100):
         setname = parasetlist.ix[i, 'Setname']
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_mid = parasetlist.ix[i, 'MA_Mid']
@@ -110,7 +112,7 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
             'MA_Long': ma_long,
         }
         #l.append(getResult(strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols))
-        l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols)))
+        l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart)))
     pool.close()
     pool.join()
     timeend = time.time()
