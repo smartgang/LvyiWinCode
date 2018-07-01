@@ -43,135 +43,6 @@ def bar1mPrepare(bar1m):
     """
     return bar1m
 
-
-def test1(strategyName, symbolInfo, K_MIN, setname, bar1mdic, barxmdic, positionRatio, initialCash, stoplossTarget, dslFolderName, indexcols, timestart):
-    # print 'sl;', str(slTarget), ',setname:', setname
-    # timestart = time.time()
-    # symbol=symbolInfo.domain_symbol
-    # bar1m = q.get()
-    symbol = 'SHFE.RB'
-
-    oprdf = pd.read_csv(strategyName + ' ' + symbol + str(K_MIN) + ' ' + setname + ' result.csv')
-
-    # timeopr = time.time()
-    # print ("%s oprtime %.3f" % (setname,timeopr - timestart))
-    symbolDomainDic = symbolInfo.amendSymbolDomainDicByOpr(oprdf)
-    # timeamend = time.time()
-    # print ("%s amendtime %.3f" % (setname,timeamend - timeopr))
-    bar1m = DC.getDomainbarByDomainSymbol(symbolInfo.getSymbolList(), bar1mdic, symbolDomainDic)
-    # timebar1m = time.time()
-    # print("%s bar1mtime %.3f" % (setname,timebar1m - timeamend))
-    bar1m = bar1mPrepare(bar1m)
-    # timepre1m = time.time()
-    # print ("%s preparetime %.3f" % (setname,timepre1m - timebar1m))
-    barxm = DC.getDomainbarByDomainSymbol(symbolInfo.getSymbolList(), barxmdic, symbolDomainDic)
-    # timexm = time.time()
-    # print ("%s barxm %.3f" % (setname, timexm - timepre1m))
-
-    a = bar1m.iloc[-1]['open']
-    b = barxm.iloc[-1]['open']
-    time1 = time.time()
-    print ("Enter %s %.3f" % (setname, time1 - timestart))
-    time.sleep(1)
-    time1 = time.time()
-    print ("%s opr_prepare: %.3f" % (setname, time1 - timestart))
-    """
-    oprdf['new_closeprice'] = oprdf['closeprice']
-    oprdf['new_closetime'] = oprdf['closetime']
-    oprdf['new_closeindex'] = oprdf['closeindex']
-    oprdf['new_closeutc'] = oprdf['closeutc']
-    oprdf['max_opr_gain'] = 0 #本次操作期间的最大收益
-    oprdf['min_opr_gain'] = 0#本次操作期间的最小收益
-    oprdf['max_dd'] = 0
-    oprnum = oprdf.shape[0]
-    """
-    time.sleep(1)
-    time1 = time.time()
-    print ("%s priceTick: %.3f" % (setname, time1 - timestart))
-    # pricetick = symbolInfo.getPriceTick()
-    # pricetick = 1
-    # worknum=0
-    time1 = time.time()
-    print ("%s dsl: %.3f" % (setname, time1 - timestart))
-    time.sleep(1)
-    """
-    for i in range(oprnum):
-        opr = oprdf.iloc[i]
-        startutc = (barxm.loc[barxm['utc_time'] == opr.openutc]).iloc[0].utc_endtime - 60#从开仓的10m线结束后开始
-        endutc = (barxm.loc[barxm['utc_time'] == opr.closeutc]).iloc[0].utc_endtime#一直到平仓的10m线结束
-        oprtype = opr.tradetype
-        openprice = opr.openprice
-        data1m = bar1m.loc[(bar1m['utc_time'] >= startutc) & (bar1m['utc_time'] < endutc)]
-        if oprtype == 1:
-            # 多仓，取最大回撤，max为最大收益，min为最小收益
-            max_dd, dd_close, maxprice, strtime, utctime, timeindex = getLongDrawbackByTick(data1m, slTarget)
-            oprdf.ix[i, 'max_opr_gain'] = (data1m.high.max() - openprice) / openprice#1min用close,tick用high和low
-            oprdf.ix[i, 'min_opr_gain'] = (data1m.low.min() - openprice) / openprice
-            oprdf.ix[i, 'max_dd'] = max_dd
-            if max_dd <= slTarget:
-                ticknum = round((maxprice * slTarget) / pricetick, 0) - 1
-                oprdf.ix[i, 'new_closeprice'] = maxprice + ticknum * pricetick
-                oprdf.ix[i, 'new_closetime'] = strtime
-                oprdf.ix[i, 'new_closeindex'] = timeindex
-                oprdf.ix[i, 'new_closeutc'] = utctime
-                worknum+=1
-
-        else:
-            # 空仓，取逆向最大回撤，min为最大收益，max为最小收闪
-            max_dd, dd_close, minprice, strtime, utctime, timeindex = getShortDrawbackByTick(data1m, slTarget)
-            oprdf.ix[i, 'max_opr_gain'] = (openprice - data1m.low.min()) / openprice
-            oprdf.ix[i, 'min_opr_gain'] = (openprice - data1m.high.max()) / openprice
-            oprdf.ix[i, 'max_dd'] = max_dd
-            if max_dd <= slTarget:
-                ticknum = round((minprice * slTarget) / pricetick, 0) - 1
-                oprdf.ix[i, 'new_closeprice'] = minprice - ticknum * pricetick
-                oprdf.ix[i, 'new_closetime'] = strtime
-                oprdf.ix[i, 'new_closeindex'] = timeindex
-                oprdf.ix[i, 'new_closeutc'] = utctime
-                worknum+=1
-    """
-    # timedsl = time.time()
-    # print ("%s timedsl %.3f" % (setname, timedsl - timexm))
-    time1 = time.time()
-    print ("%s finish: %.3f" % (setname, time1 - timestart))
-    # slip = symbolInfo.getSlip()
-    # slip = 1
-    # 2017-12-08:加入滑点
-    """
-    print ("%s calcResult" % setname)
-    oprdf['new_ret'] = ((oprdf['new_closeprice'] - oprdf['openprice']) * oprdf['tradetype']) - slip
-    oprdf['new_ret_r'] = oprdf['new_ret'] / oprdf['openprice']
-    oprdf['new_commission_fee'], oprdf['new_per earn'], oprdf['new_own cash'], oprdf['new_hands'] = RS.calcResult(oprdf,
-                                                                                                      symbolInfo,
-                                                                                                      initialCash,
-                                                                                                      positionRatio,ret_col='new_ret')
-    #timecalResult = time.time()
-    #print ("%s timecalResult %.3f" % (setname, timecalResult - timedsl))
-    #保存新的result文档
-    oprdf.to_csv(tofolder+strategyName+' '+symbol + str(K_MIN) + ' ' + setname + ' resultDSL_by_tick.csv', index=False)
-
-    print ("%s calcRS" % setname)
-    olddailydf = pd.read_csv(strategyName + ' ' + symbol + str(K_MIN) + ' ' + setname + ' dailyresult.csv',index_col='date')
-    #计算统计结果
-    oldr = RS.getStatisticsResult(oprdf, False, indexcols,olddailydf)
-
-    dailyK=DC.generatDailyClose(barxm)
-    dR = RS.dailyReturn(symbolInfo, oprdf, dailyK, initialCash)  # 计算生成每日结果
-    dR.calDailyResult()
-    dR.dailyClose.to_csv((tofolder+strategyName + ' ' + symbol + str(K_MIN) + ' ' + setname + ' dailyresultDSL_by_tick.csv'), index=False)
-    newr = RS.getStatisticsResult(oprdf,True,indexcols,dR.dailyClose)
-    #timefinal = time.time()
-    #print ("%s timefinal %.3f" % (setname, timefinal - timecalResult))
-    #print ("%s totaltime %.3f" % (setname, timefinal - timestart))
-    #print ("%s done!" % setname)
-    del oprdf
-    #return [setname,slTarget,worknum,oldendcash,oldAnnual,oldSharpe,oldDrawBack,oldSR,newendcash,newAnnual,newSharpe,newDrawBack,newSR,max_single_loss_rate]
-    print ("%s finish" % setname)
-    return [setname,slTarget,worknum]+oldr+newr
-    """
-    return 0
-
-
 def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic, barxmdic, positionRatio, initialCash, indexcols, progress=False):
     symbol = symbolInfo.domain_symbol
     new_indexcols = []
@@ -184,13 +55,13 @@ def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic,
     paranum = parasetlist.shape[0]
     for stoplossTarget in stoplossList:
         timestart = time.time()
-        dslFolderName = "DynamicStopLoss" + str(stoplossTarget * 1000)
+        dslFolderName = ("DynamicStopLoss%.1f" % (stoplossTarget * 1000))
         try:
             os.mkdir(dslFolderName)  # 创建文件夹
         except:
             # print 'folder already exist'
             pass
-        print ("stoplossTarget:%f" % stoplossTarget)
+        print ("stoplossTarget:%.3f" % stoplossTarget)
 
         resultdf = pd.DataFrame(columns=allresultdf_cols)
         setnum = 0
@@ -238,13 +109,13 @@ def getOwnl(strategyName, symbolInfo, K_MIN, winSwitchList, nolossThreshhold, pa
     paranum = parasetlist.shape[0]
     for winSwitch in winSwitchList:
         timestart = time.time()
-        ownlFolderName = "OnceWinNoLoss" + str(winSwitch * 1000)
+        ownlFolderName = "OnceWinNoLoss.1f" % (winSwitch * 1000)
         try:
             os.mkdir(ownlFolderName)  # 创建文件夹
         except:
             # print "dir already exist!"
             pass
-        print ("OnceWinNoLoss WinSwitch:%f" % winSwitch)
+        print ("OnceWinNoLoss WinSwitch:%.3f" % winSwitch)
 
         ownlresultdf = pd.DataFrame(columns=allresultdf_cols)
 
@@ -294,13 +165,13 @@ def getFRSL(strategyName, symbolInfo, K_MIN, fixRateList, parasetlist, bar1mdic,
     paranum = parasetlist.shape[0]
     for fixRateTarget in fixRateList:
         timestart = time.time()
-        folderName = "FixRateStopLoss" + str(fixRateTarget * 1000)
+        folderName = "FixRateStopLoss.1f" % (fixRateTarget * 1000)
         try:
             os.mkdir(folderName)  # 创建文件夹
         except:
             # print 'folder already exist'
             pass
-        print ("fixRateTarget:%f" % fixRateTarget)
+        print ("fixRateTarget:%.3f" % fixRateTarget)
 
         resultdf = pd.DataFrame(columns=['setname', 'fixRate', 'worknum'] + indexcols + new_indexcols)
         setnum = 0
@@ -348,8 +219,8 @@ def getDslOwnl(strategyName, symbolInfo, K_MIN, parasetlist, stoplossList, winSw
     paranum = parasetlist.shape[0]
     for stoplossTarget in stoplossList:
         for winSwitch in winSwitchList:
-            dslFolderName = "DynamicStopLoss" + str(stoplossTarget * 1000) + '\\'
-            ownlFolderName = "OnceWinNoLoss" + str(winSwitch * 1000) + '\\'
+            dslFolderName = "DynamicStopLoss%.1f\\" % (stoplossTarget * 1000)
+            ownlFolderName = "OnceWinNoLoss%.1f\\" % (winSwitch * 1000)
             newfolder = ("dsl_%.3f_ownl_%.3f" % (stoplossTarget, winSwitch))
             try:
                 os.mkdir(newfolder)  # 创建文件夹
@@ -416,7 +287,7 @@ def getMultiSLT(strategyName, symbolInfo, K_MIN, parasetlist, barxmdic, sltlist,
         for t in slt['paralist']:
             sltset.append({'name': slt['name'],
                            'sltValue': t,
-                           'folder': slt['folderPrefix'] + str(t * 1000) + '\\',
+                           'folder': ("%s%.1f\\" % (slt['folderPrefix'], (t * 1000))),
                            'fileSuffix': slt['fileSuffix']
                            })
         allSltSetList.append(sltset)

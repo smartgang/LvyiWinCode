@@ -100,7 +100,7 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
     l = []
     resultlist = pd.DataFrame(columns=['Setname'] + indexcols)
 
-    for i in range(0, 100):
+    for i in range(0, paranum):
         setname = parasetlist.ix[i, 'Setname']
         ma_short = parasetlist.ix[i, 'MA_Short']
         ma_mid = parasetlist.ix[i, 'MA_Mid']

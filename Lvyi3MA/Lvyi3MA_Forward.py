@@ -57,7 +57,7 @@ def getDslForward(strategyName, dslset, symbolinfo, K_MIN, parasetlist, folderpa
     resultfilesuffix = 'resultDSL_by_tick.csv'
     indexcolsFlag = True
     for dslTarget in dslset:
-        rawdatapath = folderpath + "DynamicStopLoss" + str(dslTarget * 1000) + '\\'
+        rawdatapath = folderpath + "DynamicStopLoss%.1f\\" % (dslTarget * 1000)
         getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
                    resultfilesuffix)
     print ('DSL forward finished!')
@@ -69,7 +69,7 @@ def getownlForward(strategyName, ownlset, symbolinfo, K_MIN, parasetlist, folder
     resultfilesuffix = 'resultOWNL_by_tick.csv'
     indexcolsFlag = True
     for ownlTarget in ownlset:
-        rawdatapath = folderpath + "OnceWinNoLoss" + str(ownlTarget * 1000) + '\\'
+        rawdatapath = folderpath + "OnceWinNoLoss%.1f\\" % (ownlTarget * 1000)
         getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
                    resultfilesuffix)
     print ('OWNL forward finished!')
