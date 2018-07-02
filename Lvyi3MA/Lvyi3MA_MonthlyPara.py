@@ -11,7 +11,7 @@ def getDslMonthParameter(strategyName,dslset,symbolinfo, K_MIN, parasetlist, fol
     colslist = mtf.getColumnsName(True)
     resultfilesuffix = ' resultDSL_by_tick.csv'
     for dslTarget in dslset:
-        rawdatapath = folderpath + "DynamicStopLoss" + str(dslTarget * 1000) + '\\'
+        rawdatapath = folderpath + "DynamicStopLoss%.1f\\" % (dslTarget * 1000)
         df = mtf.getMonthParameter(strategyName, startmonth, endmonth, symbolinfo, K_MIN, parasetlist, rawdatapath,colslist, resultfilesuffix)
         filenamehead = ("%s%s_%s_%d_%s_parameter_dsl_%.3f" % (rawdatapath,strategyName, symbolinfo.domain_symbol, K_MIN, endmonth,dslTarget))
         df.to_csv(filenamehead + '.csv')
@@ -20,7 +20,7 @@ def getownlMonthParameter(strategyName,ownlset,symbolinfo, K_MIN, parasetlist, f
     colslist = mtf.getColumnsName(True)
     resultfilesuffix = ' resultOWNL_by_tick.csv'
     for ownlTarget in ownlset:
-        rawdatapath = folderpath + "OnceWinNoLoss" + str(ownlTarget*1000) + '\\'
+        rawdatapath = folderpath + "OnceWinNoLoss%.1f\\" % (ownlTarget*1000)
         df = mtf.getMonthParameter(strategyName, startmonth, endmonth, symbolinfo, K_MIN, parasetlist, rawdatapath,colslist, resultfilesuffix)
         filenamehead = ("%s%s_%s_%d_%s_parameter_ownl_%.3f" % (rawdatapath, strategyName,symbolinfo.domain_symbol, K_MIN, endmonth,ownlTarget))
         df.to_csv(filenamehead + '.csv')
