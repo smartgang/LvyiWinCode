@@ -91,7 +91,7 @@ def getDSL(strategyName, symbolInfo, K_MIN, stoplossList, parasetlist, bar1mdic,
                 allresultdf.loc[allnum] = resultdf.loc[setnum]
                 setnum += 1
                 allnum += 1
-        resultdf.to_csv(dslFolderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_dsl' + str(stoplossTarget) + '.csv', index=False)
+        resultdf.to_csv(dslFolderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_dsl%.3f.csv' % stoplossTarget, index=False)
         timeend = time.time()
         timecost = timeend - timestart
         print (u"dsl_%.3f 计算完毕，共%d组数据，总耗时%.3f秒,平均%.3f秒/组" % (stoplossTarget,paranum, timecost, timecost / paranum))
@@ -109,7 +109,7 @@ def getOwnl(strategyName, symbolInfo, K_MIN, winSwitchList, nolossThreshhold, pa
     paranum = parasetlist.shape[0]
     for winSwitch in winSwitchList:
         timestart = time.time()
-        ownlFolderName = "OnceWinNoLoss.1f" % (winSwitch * 1000)
+        ownlFolderName = "OnceWinNoLoss%.1f" % (winSwitch * 1000)
         try:
             os.mkdir(ownlFolderName)  # 创建文件夹
         except:
@@ -147,7 +147,7 @@ def getOwnl(strategyName, symbolInfo, K_MIN, winSwitchList, nolossThreshhold, pa
                 setnum += 1
                 allnum += 1
         # ownlresultdf['cashDelta'] = ownlresultdf['new_endcash'] - ownlresultdf['old_endcash']
-        ownlresultdf.to_csv(ownlFolderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_ownl' + str(winSwitch) + '.csv', index=False)
+        ownlresultdf.to_csv(ownlFolderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_ownl%.3f.csv' % winSwitch, index=False)
         timeend = time.time()
         timecost = timeend - timestart
         print (u"ownl_%.3f 计算完毕，共%d组数据，总耗时%.3f秒,平均%.3f秒/组" % (winSwitch,paranum, timecost, timecost / paranum))
@@ -165,7 +165,7 @@ def getFRSL(strategyName, symbolInfo, K_MIN, fixRateList, parasetlist, bar1mdic,
     paranum = parasetlist.shape[0]
     for fixRateTarget in fixRateList:
         timestart = time.time()
-        folderName = "FixRateStopLoss.1f" % (fixRateTarget * 1000)
+        folderName = "FixRateStopLoss%.1f" % (fixRateTarget * 1000)
         try:
             os.mkdir(folderName)  # 创建文件夹
         except:
@@ -201,7 +201,7 @@ def getFRSL(strategyName, symbolInfo, K_MIN, fixRateList, parasetlist, bar1mdic,
                 setnum += 1
                 allnum += 1
         # resultdf['cashDelta'] = resultdf['new_endcash'] - resultdf['old_endcash']
-        resultdf.to_csv(folderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_frsl' + str(fixRateTarget) + '.csv', index=False)
+        resultdf.to_csv(folderName + '\\' + strategyName + ' ' + symbol + str(K_MIN) + ' finalresult_frsl%.3f.csv' % fixRateTarget, index=False)
         timeend = time.time()
         timecost = timeend - timestart
         print (u"frsl_%.3f 计算完毕，共%d组数据，总耗时%.3f秒,平均%.3f秒/组" % (fixRateTarget,paranum, timecost, timecost / paranum))

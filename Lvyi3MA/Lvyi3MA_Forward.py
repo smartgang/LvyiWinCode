@@ -43,9 +43,12 @@ def getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startd
     pool.join()
     mtf.calGrayResult(strategyName, symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
     indexcols = Parameter.ResultIndexDic
-    rawdata = DC.getBarData(symbol, K_MIN, monthlist[12] + '-01 00:00:00', enddate + ' 23:59:59').reset_index(drop=True)
-    dailyK = DC.generatDailyClose(rawdata)  # 生成按日的K线
-    mtf.calOprResult(strategyName, rawdatapath, symbolinfo, K_MIN, nextmonth, colslist, dailyK, positionRatio, initialCash, indexcols, indexcolsFlag, resultfilesuffix)
+
+    #rawdata = DC.getBarData(symbol, K_MIN, monthlist[12] + '-01 00:00:00', enddate + ' 23:59:59').reset_index(drop=True)
+    cols = ['open', 'high', 'low', 'close', 'strtime', 'utc_time', 'utc_endtime']
+    barxmdic = DC.getBarDic(symbolinfo, K_MIN, cols)
+
+    mtf.calOprResult(strategyName, rawdatapath, symbolinfo, K_MIN, nextmonth, colslist, barxmdic, positionRatio, initialCash, indexcols, indexcolsFlag, resultfilesuffix)
     endtime = datetime.now()
     print starttime
     print endtime
