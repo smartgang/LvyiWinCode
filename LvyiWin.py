@@ -44,7 +44,8 @@ def removeContractSwap(resultlist,contractswaplist):
     results = results.reset_index(drop=True)
     return results
 
-def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialCash=20000,calcResult=True):
+#def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialCash=20000,calcResult=True):
+def LvyiWin(symbolinfo, rawdata, paraset):
     setname=paraset['Setname']
     KDJ_N=paraset['KDJ_N']
     KDJ_M=paraset['KDJ_M']
@@ -54,7 +55,7 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
     DMI_M=paraset['DMI_M']
     MA_Short=paraset['MA_Short']
     MA_Long=paraset['MA_Long']
-
+    rawdata['Unnamed: 0'] = range(rawdata.shape[0])
     beginindex = rawdata.ix[0, 'Unnamed: 0']
 
     #处理KDJ数据：KDJ_OPEN做为最终KDJ的触发信号
@@ -168,25 +169,29 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
                             'goldcrossindex':'closeindex',
                             'goldcrossprice':'closeprice'}, inplace = True)
 
-    #longopr.to_csv(symbol+str(K_MIN)+'longopr_KDJ_M=3.csv')
-    #shortopr.to_csv(symbol+str(K_MIN)+'shortopr_KDJ_M=3.csv')
-    #结果分析
-    result=pd.concat([longopr,shortopr])
-    result=result.sort_index()
-    result=result.reset_index(drop=True)
-    result.drop(result.shape[0]-1,inplace=True)
-    #去掉跨合约的操作
-    result=removeContractSwap(result,contractswaplist)
+    # 结果分析
+    result = pd.concat([longopr, shortopr])
+    result = result.sort_index()
+    result = result.reset_index(drop=True)
+    result.drop(result.shape[0] - 1, inplace=True)
+    # 去掉跨合约的操作
+    # 使用单合约，不用再去掉跨合约
+    #result = removeContractSwap(result, contractswaplist)
 
     slip = symbolinfo.getSlip()
     result['ret']=((result['closeprice']-result['openprice'])*result['tradetype'])-slip
     result['ret_r'] = result['ret'] / result['openprice']
 
     results = {}
+
+    '''
+    # 使用单合约，策略核心内不再计算结果
     if calcResult:
-        result['commission_fee'], result['per earn'], result['own cash'],result['hands'] = RS.calcResult(result, symbolinfo,
-                                                                                         initialCash, positionRatio)
-        '''
+        result['commission_fee'], result['per earn'], result['own cash'], result['hands'] = RS.calcResult(result,
+                                                                                                          symbolinfo,
+                                                                                                          initialCash,
+                                                                                                          positionRatio)
+    
         endcash = result['own cash'].iloc[-1]
         Annual = RS.annual_return(result)
         Sharpe = RS.sharpe_ratio(result)
@@ -195,7 +200,7 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
         max_single_loss_rate = abs(result['ret_r'].min())
 
         results = {
-            'Setname': setname,
+            'Setname':setname,
             'opentimes': result.shape[0],
             'end_cash': endcash,
             'SR': SR,
@@ -204,11 +209,11 @@ def LvyiWin(symbolinfo,rawdata,paraset,contractswaplist,positionRatio=1,initialC
             'DrawBack': DrawBack,
             'max_single_loss_rate': max_single_loss_rate
         }
-    closeopr=result.loc[:,'closetime':'tradetype']
-
-    return result,df,closeopr,results
+    closeopr = result.loc[:, 'closetime':'tradetype']
+    return result, df, closeopr, results
     '''
     return result
+
 if __name__ == '__main__':
     ini_file = 'LvyiWinConfig.ini'
     conf=ConfigParser.ConfigParser()

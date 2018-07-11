@@ -41,7 +41,7 @@ M=6
 import pandas as pd
 import numpy as np
 import MA
-import talib
+#import talib
 
 def npDMI(data,N=14,M=6):
     open=np.array(data['open'])

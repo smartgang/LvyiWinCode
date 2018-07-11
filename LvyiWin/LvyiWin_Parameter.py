@@ -7,18 +7,18 @@ strategyName='LvyiWin'
 exchange_id = 'SHFE'
 sec_id='RB'
 K_MIN = 600
-startdate='2016-01-01'
-enddate = '2018-03-31'
+startdate='2010-01-01'
+enddate = '2018-07-01'
 parasetname = 'ParameterOptSet1.csv'
 positionRatio = 1 #持仓比例
 initialCash = 20000 #起始资金
 
 #=============止损控制开关===================
 progress_close = False
-calcDsl_close=True
-calcOwnl_close=False
-calcFrsl_close=True
-calcMultiSLT_close=True
+calcDsl_close=False
+calcOwnl_close=True
+calcFrsl_close=False
+calcMultiSLT_close=False
 calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002

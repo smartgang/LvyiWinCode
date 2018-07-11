@@ -10,7 +10,7 @@ J:3*K-2*D;
 注：KDJ数据在LvyiWin中有KDJ_HLim和KDJ_LLim的限制，所以暂时不把true和cross的功能转移到模块中
 '''
 import pandas as pd
-import talib
+#import talib
 import numpy as np
 
 def taKDJ(data,N=9,M=3):
@@ -46,13 +46,19 @@ def taKDJ2(data,N=9,M=3):
 
 
 def KDJ(data, N=9, M=3):
-    low_list = pd.rolling_min(data['low'], N)
-    low_list.fillna(value=pd.expanding_min(data['low']), inplace=True)
-    high_list = pd.rolling_max(data['high'], N)
-    high_list.fillna(value=pd.expanding_max(data['high']), inplace=True)
+    #low_list = pd.rolling_min(data['low'], N)
+    low_list = data['low'].rolling(N).min()
+    #low_list.fillna(value=pd.expanding_min(data['low']), inplace=True)
+    low_list.fillna(value=data['low'].rolling(N).min(), inplace=True)
+    #high_list = pd.rolling_max(data['high'], N)
+    high_list = data['high'].rolling(N).max()
+    #high_list.fillna(value=pd.expanding_max(data['high']), inplace=True)
+    high_list.fillna(value=data['high'].rolling(N).max(), inplace=True)
     rsv = (data['close'] - low_list) / (high_list - low_list) * 100
-    KDJ_K = pd.ewma(rsv, com=M-1)#a=1/(1+com),所以com=M-1
-    KDJ_D = pd.ewma(KDJ_K, com=M-1)
+    #KDJ_K = pd.ewma(rsv, com=M-1)#a=1/(1+com),所以com=M-1
+    KDJ_K = rsv.ewm(span=M, adjust=False).mean()
+    #KDJ_D = pd.ewma(KDJ_K, com=M-1)
+    KDJ_D = KDJ_K.ewm(span=M, adjust=False).mean()
     KDJ_J = 3 * KDJ_K - 2 * KDJ_D
     df1=pd.DataFrame({'KDJ_K':KDJ_K})
     df1['KDJ_D']=KDJ_D

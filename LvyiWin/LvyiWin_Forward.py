@@ -8,8 +8,9 @@ import multiprocessing
 import numpy as np
 import LvyiWin_Parameter as Parameter
 
-def getForward(strategyName,symbolinfo,K_MIN,parasetlist,rawdatapath,startdate,enddate,nextmonth,windowsSet,colslist,positionRatio,initialCash,indexcolsFlag,resultfilesuffix):
-    symbol=symbolinfo.symbol
+def getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+               resultfilesuffix):
+    symbol = symbolinfo.domain_symbol
     forwordresultpath = rawdatapath + '\\ForwardResults\\'
     forwardrankpath = rawdatapath + '\\ForwardRank\\'
     monthlist = [datetime.strftime(x, '%Y-%m') for x in list(pd.date_range(start=startdate, end=enddate, freq='M'))]
@@ -34,14 +35,19 @@ def getForward(strategyName,symbolinfo,K_MIN,parasetlist,rawdatapath,startdate,e
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     for whiteWindows in windowsSet:
-        #l.append(mtf.runPara(strategyName,whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
-        l.append(pool.apply_async(mtf.runPara, (strategyName,whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix)))
+        # l.append(mtf.runPara(strategyName,whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix))
+        l.append(pool.apply_async(mtf.runPara, (
+        strategyName, whiteWindows, symbolinfo, K_MIN, parasetlist, monthlist, rawdatapath, forwordresultpath, forwardrankpath, colslist, resultfilesuffix)))
     pool.close()
     pool.join()
+    mtf.calGrayResult(strategyName, symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
+    indexcols = Parameter.ResultIndexDic
 
-    mtf.calGrayResult(strategyName,symbol, K_MIN, windowsSet, forwardrankpath, rawdatapath)
-    indexcols=Parameter.ResultIndexDic
-    mtf.calOprResult(strategyName,rawdatapath, symbolinfo, K_MIN, nextmonth, columns=colslist, positionRatio=positionRatio,initialCash=initialCash,indexcols=indexcols,indexcolsFlag=indexcolsFlag,resultfilesuffix=resultfilesuffix)
+    #rawdata = DC.getBarData(symbol, K_MIN, monthlist[12] + '-01 00:00:00', enddate + ' 23:59:59').reset_index(drop=True)
+    cols = ['open', 'high', 'low', 'close', 'strtime', 'utc_time', 'utc_endtime']
+    barxmdic = DC.getBarDic(symbolinfo, K_MIN, cols)
+
+    mtf.calOprResult(strategyName, rawdatapath, symbolinfo, K_MIN, nextmonth, colslist, barxmdic, positionRatio, initialCash, indexcols, indexcolsFlag, resultfilesuffix)
     endtime = datetime.now()
     print starttime
     print endtime
@@ -52,8 +58,9 @@ def getDslForward(strategyName,dslset,symbolinfo, K_MIN, parasetlist, folderpath
     resultfilesuffix = 'resultDSL_by_tick.csv'
     indexcolsFlag=True
     for dslTarget in dslset:
-        rawdatapath = folderpath + "DynamicStopLoss" + str(dslTarget * 1000) + '\\'
-        getForward(strategyName,symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist,positionRatio,initialCash,indexcolsFlag,resultfilesuffix)
+        rawdatapath = folderpath + "DynamicStopLoss%.1f\\" % (dslTarget * 1000)
+        getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+                   resultfilesuffix)
     print ('DSL forward finished!')
 
 def getownlForward(strategyName,ownlset,symbolinfo, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet,positionRatio,initialCash):
@@ -62,8 +69,9 @@ def getownlForward(strategyName,ownlset,symbolinfo, K_MIN, parasetlist, folderpa
     resultfilesuffix = 'resultOWNL_by_tick.csv'
     indexcolsFlag=True
     for ownlTarget in ownlset:
-        rawdatapath = folderpath + "OnceWinNoLoss" + str(ownlTarget*1000) + '\\'
-        getForward(strategyName,symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist,positionRatio,initialCash,indexcolsFlag,resultfilesuffix)
+        rawdatapath = folderpath + "OnceWinNoLoss%.1f\\" % (ownlTarget * 1000)
+        getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+                   resultfilesuffix)
     print ('OWNL forward finished!')
 
 def getdsl_ownlForward(strategyName,dsl_ownl_list,symbolinfo, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet,positionRatio,initialCash):
@@ -74,7 +82,8 @@ def getdsl_ownlForward(strategyName,dsl_ownl_list,symbolinfo, K_MIN, parasetlist
     for dsl_ownl in dsl_ownl_list:
         newfolder = ("dsl_%.3f_ownl_%.3f\\" % (dsl_ownl[0], dsl_ownl[1]))
         rawdatapath = folderpath + newfolder  # ！！正常:'\\'，双止损：填上'\\+双止损目标文件夹\\'
-        getForward(strategyName,symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio,initialCash,indexcolsFlag,resultfilesuffix)
+        getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+                   resultfilesuffix)
     print ('DSL_OWNL forward finished!')
 
 def getMultiSltForward(strategyName,sltlist,symbolinfo, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet,positionRatio,initialCash):
@@ -108,8 +117,9 @@ def getMultiSltForward(strategyName,sltlist,symbolinfo, K_MIN, parasetlist, fold
         newfolder = ''
         for sltp in sltset:
             newfolder += (sltp['name'] + '_%.3f' % (sltp['sltValue']))
-        rawdatapath = folderpath + newfolder+'\\'
-        getForward(strategyName,symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio,initialCash,indexcolsFlag,resultfilesuffix)
+        rawdatapath = folderpath + newfolder + '\\'
+        getForward(strategyName, symbolinfo, K_MIN, parasetlist, rawdatapath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+                   resultfilesuffix)
     print ('multiSTL forward finished!')
 
 if __name__=='__main__':
@@ -205,7 +215,7 @@ if __name__=='__main__':
         positionRatio=strategyParameter['positionRatio']
         initialCash = strategyParameter['initialCash']
 
-        symbolinfo = DC.SymbolInfo(symbol)
+        symbolinfo = DC.SymbolInfo(symbol, startdate, enddate)
         slip = DC.getSlip(symbol)
         pricetick = DC.getPriceTick(symbol)
 
@@ -250,8 +260,9 @@ if __name__=='__main__':
             if commonForward:
                 colslist = mtf.getColumnsName(False)
                 resultfilesuffix = 'result.csv'
-                indexcolsFlag=False
-                getForward(strategyName,symbolinfo,K_MIN,parasetlist,folderpath,startdate,enddate,nextmonth,windowsSet,colslist,positionRatio,initialCash,indexcolsFlag,resultfilesuffix)
+                indexcolsFlag = False
+                getForward(strategyName, symbolinfo, K_MIN, parasetlist, folderpath, startdate, enddate, nextmonth, windowsSet, colslist, positionRatio, initialCash, indexcolsFlag,
+                           resultfilesuffix)
             if dsl:
                 dslStep = strategyParameter['dslStep']
                 stoplossList = np.arange(strategyParameter['dslTargetStart'], strategyParameter['dslTargetEnd'], dslStep)
