@@ -120,7 +120,7 @@ def getOwnl(strategyName, symbolInfo, K_MIN, winSwitchList, nolossThreshhold, pa
         ownlresultdf = pd.DataFrame(columns=allresultdf_cols)
 
         setnum = 0
-        numlist = range(14109, paranum, 100)
+        numlist = range(0, paranum, 100)
         numlist.append(paranum)
         for n in range(1, len(numlist)):
             pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)

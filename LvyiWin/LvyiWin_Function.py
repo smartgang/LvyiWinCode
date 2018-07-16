@@ -65,10 +65,25 @@ def successiveEarnDistribut(resultdf,filename,new=True):
     win_count = df2.loc[df2[ret_col] > 0, 'count']
     loss_count = df2.loc[df2[ret_col] <= 0, 'count']
     df2.to_csv(filename+'successiveEarnDis.csv')
+
+def parasetGenerator():
+    upperpath=DC.getUpperPath(Parameter.folderLevel)
+    resultpath = upperpath + Parameter.resultFolderName
+    setlist = []
+    i = 0
+    for ms in [5, 6, 7]:
+        for ml in [24,25,26, 27, 28, 29, 30]:
+            for kn in [6, 8, 20, 22, 24, 26, 28, 30]:
+                for dn in [28, 30, 32, 34, 36]:
+                    setname = 'Set' + str(i) + ' MS' + str(ms) + ' ML' + str(ml) + ' KN' + str(kn) + ' DN' + str(dn)
+                    l = [setname, ms, ml, kn, dn]
+                    setlist.append(l)
+                    i += 1
+
+    setpd = pd.DataFrame(setlist, columns=['Setname', 'MA_Short', 'MA_Long', 'KDJ_N', 'DMI_N'])
+    setpd.to_csv(resultpath+'ParameterOptSet_simple.csv')
+
+
 if __name__=='__main__':
     #resultCalc()
-    resultdir='D:\\002 MakeLive\myquant\HopeWin\ForwardOprAnalyze_0.18_0.10'
-    filename='HopeMacdMaWin SHFE.RB3600_Rank4_win4_oprResult'
-    os.chdir(resultdir)
-    resultdf=pd.read_csv(filename+'.csv')
-    successiveEarnDistribut(resultdf,filename,True)
+    parasetGenerator()

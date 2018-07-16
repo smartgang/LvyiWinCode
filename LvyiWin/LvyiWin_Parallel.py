@@ -99,7 +99,7 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     l = []
     resultlist = pd.DataFrame(columns=['Setname']+indexcols)
-    for i in range(14124, paranum):
+    for i in range(0, paranum):
         setname = parasetlist.ix[i, 'Setname']
         kdj_n = parasetlist.ix[i, 'KDJ_N']
         dmi_n = parasetlist.ix[i, 'DMI_N']
@@ -116,8 +116,8 @@ def getParallelResult(strategyParameter,resultpath,parasetlist,paranum,indexcols
             'MA_Short': ma_short,
             'MA_Long': ma_long,
         }
-        l.append(getResult(strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart))
-        #l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart)))
+        #l.append(getResult(strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart))
+        l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart)))
     pool.close()
     pool.join()
     timeend = time.time()

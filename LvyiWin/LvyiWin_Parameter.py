@@ -9,30 +9,30 @@ sec_id='RB'
 K_MIN = 600
 startdate='2010-01-01'
 enddate = '2018-07-01'
-parasetname = 'ParameterOptSet1.csv'
+parasetname = 'ParameterOptSet_simple.csv'
 positionRatio = 1 #持仓比例
 initialCash = 20000 #起始资金
 
 #=============止损控制开关===================
 progress_close = False
-calcDsl_close=False
+calcDsl_close=True
 calcOwnl_close=True
-calcFrsl_close=False
+calcFrsl_close=True
 calcMultiSLT_close=False
 calcDslOwnl_close=False
 #dsl参数
 dslStep_close=-0.002
-dslTargetStart_close=-0.022
+dslTargetStart_close=-0.016
 dslTargetEnd_close = -0.024
 #ownl参数
 ownlStep_close=0.001
-ownlTargetStart_close = 0.009
-ownltargetEnd_close = 0.010
+ownlTargetStart_close = 0.008
+ownltargetEnd_close = 0.013
 nolossThreshhold_close = 3
 #frsl参数
 frslStep_close= -0.001
 frslTargetStart_close = -0.010
-frslTragetEnd_close = -0.011
+frslTragetEnd_close = -0.015
 #=============推进控制开关===================
 #nextMonthName='18-05'
 forwardWinStart=1
