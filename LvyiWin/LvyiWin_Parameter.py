@@ -11,7 +11,7 @@ startdate='2010-01-01'
 enddate = '2018-07-01'
 parasetname = 'ParameterOptSet_simple.csv'
 positionRatio = 1 #持仓比例
-initialCash = 20000 #起始资金
+initialCash = 200000 #起始资金
 
 #=============止损控制开关===================
 progress_close = False
