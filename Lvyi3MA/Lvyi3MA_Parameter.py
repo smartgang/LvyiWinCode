@@ -8,31 +8,41 @@ exchange_id = 'SHFE'
 sec_id = 'RB'
 K_MIN = 3600
 startdate = '2010-01-01'
-enddate = '2018-06-01'
+enddate = '2018-07-01'
 parasetname = 'ParameterOptSet3MA.csv'
-positionRatio = 1  # 持仓比例
-initialCash = 200000  # 起始资金
+result_para_dic = {  # 结果计算相关参数
+    'positionRatio': 1,  # 持仓比例
+    'initialCash': 200000,  # 起始资金
+    'remove_polar_switch': False,
+    'remove_polaar_rate': 0.01
+}
 
 # =============止损控制开关===================
 progress_close = False
-calcDsl_close = False
-calcOwnl_close = False
-calcFrsl_close = True
-calcMultiSLT_close = False
+calcDsl_close = True
+calcOwnl_close = True
+calcFrsl_close = False
+calcMultiSLT_close = True
 calcDslOwnl_close = False
 # dsl参数
 dslStep_close = -0.002
 dslTargetStart_close = -0.018
-dslTargetEnd_close = -0.024
+dslTargetEnd_close = -0.019
 # ownl参数
 ownlStep_close = 0.001
-ownlTargetStart_close = 0.009
-ownltargetEnd_close = 0.01
+ownlTargetStart_close = 0.01
+ownltargetEnd_close = 0.011
 nolossThreshhold_close = 3
 # frsl参数
 frslStep_close = -0.001
-frslTargetStart_close = -0.009
-frslTragetEnd_close = -0.01
+frslTargetStart_close = -0.010
+frslTragetEnd_close = -0.011
+# atr止损参数
+atr_pendant_n_list = [5, 8]
+atr_pendant_rate_list = [1.0, 1.5, 2.0]
+atr_yoyo_n_list = [8, 16, 30]
+atr_yoyo_rate_list = [1, 1.2, 1.5]
+
 # =============推进控制开关===================
 # nextMonthName='18-05'
 forwardWinStart = 1

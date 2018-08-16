@@ -73,14 +73,14 @@ def Lvyi3MAWin(symbolinfo, rawdata, paraset):
     if goldcrosslist.ix[0, 'goldcrossindex'] < deathcrosslist.ix[0, 'deathcrossindex']:
         longcrosslist = pd.concat([goldcrosslist, deathcrosslist], axis=1)
     else:  # 如果第一个死叉的序号在金叉前，则要将死叉往上移1格
-        longcrosslist = pd.concat([goldcrosslist, deathcrosslist.shift(-1).fillna(0)], axis=1)
+        longcrosslist = pd.concat([goldcrosslist, deathcrosslist.shift(-1)], axis=1)
     longcrosslist = longcrosslist.set_index(pd.Index(longcrosslist['goldcrossindex']), drop=True)
 
     # 生成空仓序列（死叉在前，金叉在后）
     if deathcrosslist.ix[0, 'deathcrossindex'] < goldcrosslist.ix[0, 'goldcrossindex']:
         shortcrosslist = pd.concat([deathcrosslist, goldcrosslist], axis=1)
     else:  # 如果第一个金叉的序号在死叉前，则要将金叉往上移1格
-        shortcrosslist = pd.concat([deathcrosslist, goldcrosslist.shift(-1).fillna(0)], axis=1)
+        shortcrosslist = pd.concat([deathcrosslist, goldcrosslist.shift(-1)], axis=1)
     shortcrosslist = shortcrosslist.set_index(pd.Index(shortcrosslist['deathcrossindex']), drop=True)
 
     # 取出开多序号和开空序号

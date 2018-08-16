@@ -12,9 +12,15 @@ import multiprocessing
 import Lvyi3MA_Parameter as Parameter
 import time
 
-def getResult(strategyName, symbolinfo, K_MIN, setname, rawdataDic, para, positionRatio, initialCash, indexcols,timestart):
+def getResult(strategyName, symbolinfo, K_MIN, setname, rawdataDic, para, result_para_dic, indexcols,timestart):
     time1 = time.time()
     print ("%s Enter %.3f" % (setname, time1-timestart))
+
+    initialCash = result_para_dic['initialCash']
+    positionRatio = result_para_dic['positionRatio']
+    remove_polar_switch = result_para_dic['remove_polar_switch']
+    remove_polaar_rate = result_para_dic['remove_polaar_rate']
+
     symbollist = symbolinfo.getSymbolList()
     symbolDomainDic = symbolinfo.getSymbolDomainDic()
     result = pd.DataFrame()
@@ -73,8 +79,7 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
     startdate = strategyParameter['startdate']
     enddate = strategyParameter['enddate']
     domain_symbol = '.'.join([exchange_id, sec_id])
-    positionRatio = strategyParameter['positionRatio']
-    initialCash = strategyParameter['initialCash']
+    result_para_dic = strategyParameter['result_para_dic']
     # ======================数据准备==============================================
     # 取合约信息
     symbolInfo = DC.SymbolInfo(domain_symbol, startdate, enddate)
@@ -111,8 +116,8 @@ def getParallelResult(strategyParameter, resultpath, parasetlist, paranum, index
             'MA_Mid': ma_mid,
             'MA_Long': ma_long,
         }
-        #l.append(getResult(strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols))
-        l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, positionRatio, initialCash, indexcols,timestart)))
+        #l.append(getResult(strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, result_para_dic, indexcols, timestart))
+        l.append(pool.apply_async(getResult, (strategyName, symbolInfo, K_MIN, setname, rawdataDic, paraset, result_para_dic, indexcols,timestart)))
     pool.close()
     pool.join()
     timeend = time.time()
@@ -146,16 +151,15 @@ if __name__ == '__main__':
     # 参数设置
     strategyParameterSet = []
     if not Parameter.symbol_KMIN_opt_swtich:
-        # 单品种单周期模式
-        paradic = {
-            'strategyName': Parameter.strategyName,
-            'exchange_id': Parameter.exchange_id,
-            'sec_id': Parameter.sec_id,
-            'K_MIN': Parameter.K_MIN,
-            'startdate': Parameter.startdate,
-            'enddate': Parameter.enddate,
-            'positionRatio': Parameter.positionRatio,
-            'initialCash': Parameter.initialCash
+        #单品种单周期模式
+        paradic={
+        'strategyName':Parameter.strategyName,
+        'exchange_id': Parameter.exchange_id,
+        'sec_id': Parameter.sec_id,
+        'K_MIN': Parameter.K_MIN,
+        'startdate': Parameter.startdate,
+        'enddate' : Parameter.enddate,
+        'result_para_dic': Parameter.result_para_dic
         }
         strategyParameterSet.append(paradic)
     else:
@@ -169,11 +173,10 @@ if __name__ == '__main__':
                 'strategyName': symbolset.ix[i, 'strategyName'],
                 'exchange_id': exchangeid,
                 'sec_id': secid,
-                'K_MIN': symbolset.ix[i, 'K_MIN'],
-                'startdate': symbolset.ix[i, 'startdate'],
-                'enddate': symbolset.ix[i, 'enddate'],
-                'positionRatio': Parameter.positionRatio,
-                'initialCash': Parameter.initialCash
+                'K_MIN': symbolset.ix[i,'K_MIN'],
+                'startdate': symbolset.ix[i,'startdate'],
+                'enddate': symbolset.ix[i,'enddate'],
+                'result_para_dic': Parameter.result_para_dic
             }
             )
     allsymbolresult_cols = ['Setname'] + indexcols + ['strategyName', 'exchange_id', 'sec_id', 'K_MIN']
